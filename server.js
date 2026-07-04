@@ -3,6 +3,9 @@ const express = require('express');
 
 const bot = new Telegraf('8871741160:AAH8cOnFnFjIcZFSb1WqbESm0F8aIHxTdSk');
 
+// Username Admin yang berhak memvalidasi bukti pembayaran
+const ADMIN_USERNAME = 'Ngapain_bro'; 
+
 // Objek sementara untuk menyimpan status pilihan fitur user
 const userSessions = {};
 
@@ -84,6 +87,19 @@ bot.action('menu_fix_app', async (ctx) => {
         "📝 **LANGKAH PERTAMA:**\n" +
         "Silakan **ketik dan kirimkan deskripsi detail / pesan teks** mengenai bagian error yang ingin Anda perbaiki terlebih dahulu."
     );
+});
+
+// ======================== HANDLER BUKTI PEMBAYARAN (ADMIN GUARD) ========================
+
+bot.on('photo', async (ctx) => {
+    const senderUsername = ctx.from.username;
+
+    if (senderUsername !== ADMIN_USERNAME) {
+        return ctx.reply('⚠️ **AKSES DITOLAK!**\nMaaf, hanya Admin (@Ngapain_bro) yang berhak memvalidasi bukti pembayaran.');
+    }
+
+    ctx.reply('✅ **Bukti pembayaran diterima oleh sistem.**\nSedang memproses validasi lisensi untuk user...');
+    console.log(`Bukti pembayaran diterima dari Admin: ${senderUsername}`);
 });
 
 // ======================== PROCESSOR APK & PROGRESS BAR DRAMATIS ========================
@@ -190,8 +206,8 @@ bot.on('document', async (ctx) => {
 const handlePaymentResponse = async (ctx, featureName, priceText) => {
     await ctx.answerCbQuery().catch(() => {});
     
-    const LINK_GROUP_QRIS = 'https://t.me/your_group_username_atau_invite_link'; // Ganti pakai link group lo, Bro!
-    const LINK_ADMIN = 'https://t.me/BotFather'; // Ganti pakai username admin lo, Bro!
+    const LINK_GROUP_QRIS = 'https://t.me/+7G-rozzl_Uk4NDll'; // Ganti pakai link group lo, Bro!
+    const LINK_ADMIN = 'https://t.me/SyntaxApp_bot'; // Ganti pakai username admin lo, Bro!
 
     return ctx.replyWithMarkdown(
         `💳 **FORM PEMBAYARAN LISENSI & AKTIVASI**\n\n` +
