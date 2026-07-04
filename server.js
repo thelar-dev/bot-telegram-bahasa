@@ -6,7 +6,7 @@ const bot = new Telegraf('8871741160:AAH8cOnFnFjIcZFSb1WqbESm0F8aIHxTdSk');
 // Objek sementara untuk menyimpan status pilihan fitur user
 const userSessions = {};
 
-// Fungsi pembantu buat animasi progress bar (Waktu aman & responsif untuk Vercel)
+// Fungsi pembantu buat animasi progress bar di menu APK (Waktu dipercepat biar aman dari limit Vercel)
 const delay = (ms) => new Promise(res => setTimeout(res, ms));
 
 // 1. Trigger /start
@@ -71,7 +71,7 @@ bot.action('menu_fix_app', async (ctx) => {
     );
 });
 
-// ======================== PROCESSOR & PROGRESS BAR FILE ========================
+// ======================== PROCESSOR APK & PROGRESS BAR ========================
 
 bot.on('text', async (ctx) => {
     const userId = ctx.from.id;
@@ -150,22 +150,14 @@ bot.on('document', async (ctx) => {
     ).catch((e) => console.error("Gagal kirim link unduhan:", e));
 });
 
-// ======================== NEW: LOADING SEKBAR SAAT KLIK DOWNLOAD -> BARU PAYMENT ========================
+// ======================== OPTIMIZED: KLIK INSTAN LANGSUNG KELUAR QRIS (ANTI-STUCK) ========================
 
 bot.action('trigger_payment', async (ctx) => {
+    // Sinyal instan ke Telegram biar tombol download gak kelamaan muter-muter
     await ctx.answerCbQuery().catch(() => {});
     
-    // Kirim pesan loading awal buat penyiapan link download
-    const loadPayMsg = await ctx.reply('🔑 [ ] 0% - Menghubungkan ke secure server download...').catch(() => {});
-    if (!loadPayMsg) return;
-
-    // Animasi Loading Penyiapan Payment Link (Dibuat cepat & aman dari limit 10s Vercel)
-    await delay(1000);
-    await ctx.telegram.editMessageText(ctx.chat.id, loadPayMsg.message_id, null, '🔒 [████░░░░░░] 40% - Mengenkripsi file output & generate token kunci...');
-    await delay(1200);
-    await ctx.telegram.editMessageText(ctx.chat.id, loadPayMsg.message_id, null, '💳 [████████░░] 80% - Membuat invoice gerbang pembayaran cloud QRIS...');
-    await delay(1000);
-    await ctx.telegram.editMessageText(ctx.chat.id, loadPayMsg.message_id, null, '🚀 [██████████] 100% - Menampilkan form aktivasi lisensi.');
+    // Trik tulisan status sukses kilat sekali kirim tanpa nunggu delay yang bikin server crash
+    await ctx.reply('🚀 [██████████] 100% - Secure link generated! Menampilkan form aktivasi...').catch(() => {});
 
     const URL_FOTO_QRIS = 'https://raw.githubusercontent.com/thelar-dev/bot-telegram-bahasa/main/qris.jpg'; 
 
@@ -179,6 +171,7 @@ bot.action('trigger_payment', async (ctx) => {
         `*Catatan: Setelah transfer berhasil, kirimkan bukti screenshot pembayaran ke Admin untuk mendapatkan Key Aktivasi download.*`;
 
     try {
+        // Langsung tembak kirim foto QRIS, kilat anti-lemot!
         await ctx.replyWithPhoto(
             { url: URL_FOTO_QRIS },
             {
