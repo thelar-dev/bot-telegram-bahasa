@@ -13,8 +13,9 @@ const delay = (ms) => new Promise(res => setTimeout(res, ms));
 bot.start((ctx) => {
     const namaUser = ctx.from.first_name || 'User';
     ctx.replyWithMarkdown(
-        `👋 **Halo ${namaUser}!** Selamat datang di **SyntaxApp Modding Tools**.\n\n` +
-        `Silakan pilih bahasa Anda / Please select your language:`,
+        `👋 **⚡ WELCOME TO SYNTAXAPP MODDING CORE v1.0 ⚡**\n\n` +
+        `Halo **${namaUser}**! Sistem otomatis kami siap membedah, memodifikasi, dan mengoptimalkan aplikasi Anda dengan standar enkripsi cloud tertinggi.\n\n` +
+        ` Silakan pilih bahasa untuk memulai / Please select your language:`,
         Markup.inlineKeyboard([
             [
                 Markup.button.callback('🇮🇩 Bahasa Indonesia', 'lang_id'),
@@ -30,19 +31,21 @@ bot.action(['lang_id', 'lang_en'], async (ctx) => {
     const isIndo = ctx.callbackQuery.data === 'lang_id';
 
     const welcomeText = isIndo
-        ? "⚡ **SYNTAXAPP MAIN MENU v1.0** ⚡\n\n" +
-          "**Sistem cloud kami siap memproses aplikasi Anda secara otomatis.**\n" +
-          "Silakan pilih fitur premium yang ingin Anda gunakan di bawah ini:"
-        : "⚡ **SYNTAXAPP MAIN MENU v1.0** ⚡\n\n" +
-          "**Our cloud system is ready to process your application automatically.**\n" +
-          "Please select the premium feature you want to use below:";
+        ? "🤖 **SYNTAXAPP CONTROL PANEL**\n\n" +
+          "**Status Server:** 🟢 `ONLINE (HIGH PERFORMANCE)`\n" +
+          "**Core Engine:** `v1.0-CloudCompiler`\n\n" +
+          "Silakan pilih menu fiturnya, Bro:"
+        : "🤖 **SYNTAXAPP CONTROL PANEL**\n\n" +
+          "**Server Status:** 🟢 `ONLINE (HIGH PERFORMANCE)`\n" +
+          "**Core Engine:** `v1.0-CloudCompiler`\n\n" +
+          "Please select a feature below:";
 
     ctx.replyWithMarkdown(
         welcomeText,
         Markup.inlineKeyboard([
-            [Markup.button.callback('📦 Unpack Aplikasi', 'menu_unpack')],
-            [Markup.button.callback('🚫 Hapus Iklan Aplikasi', 'menu_remove_ads')],
-            [Markup.button.callback('🛠️ Perbaiki Aplikasi', 'menu_fix_app')]
+            [Markup.button.callback('📦 Unpack Core Resources', 'menu_unpack')],
+            [Markup.button.callback('🚫 Strip & Bypass Ad-Layers', 'menu_remove_ads')],
+            [Markup.button.callback('🛠️ Source Code Logic Repair', 'menu_fix_app')]
         ])
     ).catch((e) => console.error("Gagal kirim main menu:", e));
 });
@@ -54,9 +57,9 @@ bot.action('menu_unpack', async (ctx) => {
     const userId = ctx.from.id;
     userSessions[userId] = { feature: 'unpack' }; 
     ctx.replyWithMarkdown(
-        "📦 **FITUR PREMIUM: UNPACK APLIKASI**\n\n" +
-        "Silakan **kirimkan file (.apk)** yang ingin Anda bongkar ke sini.\n" +
-        "**Sistem akan mengekstrak seluruh resources, aset, dex, dan manifest secara otomatis.**"
+        "📦 **[MODE DECOMPILE: UNPACK RESOURCES]**\n\n" +
+        "Sistem akan membongkar seluruh aset internal aplikasi Anda. Seluruh berkas biner, `AndroidManifest.xml`, file gambar, layout, hingga aset dex akan diekstrak mentah secara sempurna.\n\n" +
+        "👉 **Silakan langsung kirimkan file (.apk) target ke sini, Bro!**"
     );
 });
 
@@ -65,9 +68,9 @@ bot.action('menu_remove_ads', async (ctx) => {
     const userId = ctx.from.id;
     userSessions[userId] = { feature: 'remove_ads' }; 
     ctx.replyWithMarkdown(
-        "🚫 **FITUR PREMIUM: HAPUS IKLAN APLIKASI**\n\n" +
-        "Silakan **kirimkan file (.apk)** target ke sini.\n" +
-        "**Sistem akan otomatis mendeteksi Google Ads SDK, Unity Ads, AdMob, dan melakukan bypass/strip iklan agar bersih total!**"
+        "🚫 **[MODE BYPASS: STRIP AD-LAYERS]**\n\n" +
+        "Sistem akan memindai manifest, mengisolasi Google Ads SDK, Unity Ads, AdMob, serta melumpuhkan jalur pelacak analitik iklan. Aplikasi target dijamin bersih total, bebas iklan, dan berjalan lebih ringan.\n\n" +
+        "👉 **Silakan langsung kirimkan file (.apk) target ke sini, Bro!**"
     );
 });
 
@@ -76,9 +79,10 @@ bot.action('menu_fix_app', async (ctx) => {
     const userId = ctx.from.id;
     userSessions[userId] = { feature: 'fix_app', step: 'waiting_text' }; 
     ctx.replyWithMarkdown(
-        "🛠️ **FITUR PREMIUM: PERBAIKI APLIKASI**\n\n" +
-        "Silakan **ketik dan kirim pesan terlebih dahulu** mengenai detail error atau bagian apa yang ingin diperbaiki di dalam aplikasi ini.\n\n" +
-        "**Setelah mengirim pesan penjelasan, baru sistem akan meminta Anda mengirimkan file (.apk)-nya.**"
+        "🛠️ **[MODE RECONSTRUCT: SOURCE CODE REPAIR]**\n\n" +
+        "Layanan perbaikan kode logic, penambalan error kompilasi, bypass crash internal, atau restrukturisasi file Smali.\n\n" +
+        "📝 **LANGKAH PERTAMA:**\n" +
+        "Silakan **ketik dan kirimkan deskripsi detail / pesan teks** mengenai bagian error yang ingin Anda perbaiki terlebih dahulu."
     );
 });
 
@@ -91,8 +95,9 @@ bot.on('text', async (ctx) => {
         session.bugDescription = ctx.message.text; 
         session.step = 'waiting_apk'; 
         return ctx.replyWithMarkdown(
-            `📝 **Deskripsi Kerusakan Diterima:**\n_"${ctx.message.text}"_\n\n` +
-            `Sekarang, silakan **kirimkan file (.apk)** yang ingin diperbaiki tersebut ke sini agar sistem bisa menganalisis kode sumbernya!`
+            `✅ **DESKRIPSI PARSING BERHASIL**\n` +
+            `» _"${ctx.message.text}"_\n\n` +
+            `👉 **Sekarang, silakan kirimkan file (.apk) yang ingin diperbaiki agar sistem dapat menyelaraskan kerusakan dengan kode sumber!**`
         );
     }
 });
@@ -103,54 +108,49 @@ bot.on('document', async (ctx) => {
     const fileName = ctx.message.document.file_name;
 
     if (!fileName.endsWith('.apk')) {
-        return ctx.reply('❌ **File harus berformat .apk, Bro! Silakan cek kembali file yang Anda kirim.**');
+        return ctx.replyWithMarkdown('❌ **FORMAT REJECTED! File wajib berakhiran .apk, Bro. Silakan kirim ulang.**');
     }
     if (!session) {
-        return ctx.reply('⚠️ **Silakan pilih menu fiturnya dulu di atas, Bro, baru kirim file APK-nya.**');
+        return ctx.replyWithMarkdown('⚠️ **SESSION EXPIRED! Silakan pilih menu fiturnya kembali di atas.**');
     }
     if (session.feature === 'fix_app' && session.step === 'waiting_text') {
-        return ctx.reply('⚠️ **Tolong ketik dulu penjelasan error/bagian yang mau diperbaiki, baru kirim file APK-nya, Bro!**');
+        return ctx.replyWithMarkdown('⚠️ **DESKRIPSI REQUIRED! Tolong ketik dulu penjelasan errornya baru kirim file APK, Bro!**');
     }
 
-    // Array lompatan persentase loading sesuai request lo (dibuat detail & dramatis)
+    // Array lompatan angka acak sesuai request lo (10, 16, 20, 25, 30, 31, 34, 37, dst)
     const steps = [
-        { pct: 10, txt: 'Mengunduh dan memverifikasi integritas file APK...' },
-        { pct: 16, txt: 'Membaca struktur manifest dan package signature...' },
-        { pct: 20, txt: 'Mengekstrak AndroidManifest.xml & resource assets...' },
-        { pct: 25, txt: 'Menginisialisasi core decompiler engine v1.0...' },
-        { pct: 30, txt: 'Decompiling classes.dex ke arsitektur Smali code...' },
-        { pct: 31, txt: 'Menganalisis dependensi library internal...' },
-        { pct: 34, txt: 'Scanning bytecode dari baris logic error / pelacak iklan...' },
-        { pct: 37, txt: 'Melakukan injeksi patch otomatis pada source code...' },
-        { pct: 45, txt: 'Restrukturisasi class references dan routing ulang metadata...' },
-        { pct: 55, txt: 'Membersihkan cache sampah kompilator lama...' },
-        { pct: 68, txt: 'Menyusun ulang komponen (Rebuilding classes ke form dex)...' },
-        { pct: 74, txt: 'Mengemas kembali resource assets ke dalam container APK...' },
-        { pct: 85, txt: 'Melakukan optimalisasi ZipAlign pada struktur file...' },
-        { pct: 92, txt: 'Menandatangani aplikasi dengan SHA-256 Debug Certificate...' },
+        { pct: 10, txt: 'Mengunduh data aplikasi ke sandbox cloud...' },
+        { pct: 16, txt: 'Memverifikasi arsitektur biner & file signature...' },
+        { pct: 20, txt: 'Mengekstrak manifes utama dan tabel resources...' },
+        { pct: 25, txt: 'Menginisialisasi modul injeksi SyntaxApp Engine...' },
+        { pct: 30, txt: 'Decompiling bytecode classes.dex menjadi struktur Smali...' },
+        { pct: 31, txt: 'Pemindaian silang dependensi internal API...' },
+        { pct: 34, txt: 'Menganalisis baris instruksi compiler...' },
+        { pct: 37, txt: 'Menjalankan skrip modifikasi dinamis pada core layer...' },
+        { pct: 52, txt: 'Pembersihan junk file dan sisa cache metadata...' },
+        { pct: 67, txt: 'Menyusun ulang bytecode (Rebuilding classes to dex container)...' },
+        { pct: 81, txt: 'Mengemas ulang seluruh folder aset menjadi APK biner...' },
+        { pct: 89, txt: 'Melakukan optimasi penjajaran byte lewat ZipAlign...' },
+        { pct: 95, txt: 'Menandatangani aplikasi dengan sertifikat enkripsi baru...' },
         { pct: 100, txt: 'Sukses total! Seluruh proses modifikasi selesai sempurna.' }
     ];
 
     let progressMsg;
     try {
-        // Teks awal pemicu loading
-        progressMsg = await ctx.replyWithMarkdown(`📥 **[░░░░░░░░░░] 0%**\n🔄 _Memulai koneksi ke cloud core..._`);
+        progressMsg = await ctx.replyWithMarkdown(`📥 **[░░░░░░░░░░] 0%**\n🔄 _Menghubungkan ke SyntaxApp Cloud Core..._`);
         
-        // Perulangan untuk memunculkan lompatan bar secara lambat & detail
         for (const step of steps) {
-            // Mengatur visual block kotak sekbar berdasarkan persentase
             const totalBlocks = 10;
             const filledBlocks = Math.round((step.pct / 100) * totalBlocks);
             const emptyBlocks = totalBlocks - filledBlocks;
             const barVisual = '█'.repeat(filledBlocks) + '░'.repeat(emptyBlocks);
 
-            // Judul berdasarkan menu fitur
             let featureTitle = '';
-            if (session.feature === 'unpack') featureTitle = '📦 **CORE PROCESS: UNPACKING**';
-            if (session.feature === 'remove_ads') featureTitle = '🚫 **CORE PROCESS: STRIPPING ADS**';
-            if (session.feature === 'fix_app') featureTitle = '🛠️ **CORE PROCESS: APP REPAIRING**';
+            if (session.feature === 'unpack') featureTitle = '📦 **CORE PROCESS: UNPACKING RESOURCES**';
+            if (session.feature === 'remove_ads') featureTitle = '🚫 **CORE PROCESS: STRIPPING AD-LAYERS**';
+            if (session.feature === 'fix_app') featureTitle = '🛠️ **CORE PROCESS: LOGIC REPAIRING**';
 
-            await delay(1300); // Waktu jeda (1.3 detik) tiap lompatan biar proses kerasa lama & riil
+            await delay(1300); // Jedanya dibikin lama biar mantap dan meyakinkan
 
             await ctx.telegram.editMessageText(
                 ctx.chat.id, 
@@ -166,46 +166,63 @@ bot.on('document', async (ctx) => {
         console.error("Gagal melakukan update progress bar:", err);
     }
 
-    delete userSessions[userId];
+    // Tentukan trigger callback payment unik berdasarkan tipe fitur sebelum session dihapus
+    let payCallback = 'pay_unpack';
+    if (session.feature === 'remove_ads') payCallback = 'pay_ads';
+    if (session.feature === 'fix_app') payCallback = 'pay_fix';
 
-    // Jeda sebentar sebelum memunculkan tombol download utama
+    delete userSessions[userId];
     await delay(800);
 
-    await ctx.reply(
+    await ctx.replyWithMarkdown(
         `✅ **PROSES SELESAI SEMPURNA!**\n\n` +
-        `File **${fileName}** telah sukses dimodifikasi oleh cloud system kami.\n` +
-        `Silakan klik tombol di bawah ini untuk membuka menu pembayaran lisensi dan mengunduh file.`,
-        {
-            parse_mode: 'Markdown',
-            ...Markup.inlineKeyboard([
-                [Markup.button.callback('📥 Download Hasil Modifikasi', 'trigger_payment')]
-            ])
-        }
+        `File **${fileName}** telah sukses dimodifikasi secara menyeluruh oleh cloud system kami.\n\n` +
+        `Silakan klik tombol di bawah ini untuk membuka halaman konfirmasi gerbang pembayaran lisensi enkripsi.`,
+        Markup.inlineKeyboard([
+            [Markup.button.callback('📥 Download Hasil Modifikasi', payCallback)]
+        ])
     ).catch((e) => console.error("Gagal kirim link unduhan:", e));
 });
 
-// ======================== ALUR: DIRECT LINK MENU MENUJU GROUP QRIS ========================
+// ======================== HANDLERS PEMBAYARAN DINAMIS (HARGA BEDA-BEDA) ========================
 
-bot.action('trigger_payment', async (ctx) => {
+// Fungsi generator teks pembayaran premium biar seragam tapi dinamis harganya
+const handlePaymentResponse = async (ctx, featureName, priceText) => {
     await ctx.answerCbQuery().catch(() => {});
     
-    // GANTI LINK DI BAWAH INI DENGAN LINK GROUP / CHANNEL TELEGRAM REAL TEMPAT FOTO QRIS LO
-    const LINK_GROUP_QRIS = 'https://t.me/your_group_username_atau_invite_link';
-    const LINK_ADMIN = 'https://t.me/BotFather'; // Ganti dengan username Telegram lo
+    const LINK_GROUP_QRIS = 'https://t.me/your_group_username_atau_invite_link'; // Ganti pakai link group lo, Bro!
+    const LINK_ADMIN = 'https://t.me/BotFather'; // Ganti pakai username admin lo, Bro!
 
-    ctx.replyWithMarkdown(
+    return ctx.replyWithMarkdown(
         `💳 **FORM PEMBAYARAN LISENSI & AKTIVASI**\n\n` +
-        `Untuk mendapatkan key akses download dari file APK yang telah dimodifikasi, silakan lakukan pembayaran sebesar:\n\n` +
-        `💰 **Total Tagihan: Rp 25.000,-**\n\n` +
-        `📥 **LANGKAH-LANGKAH PEMBAYARAN:**\n` +
+        `Sistem mendeteksi aktivitas modifikasi pada kategori:\n` +
+        `🛠️ Fitur: **${featureName}**\n` +
+        `💰 Total Tagihan: **${priceText}**\n\n` +
+        `⚠️ _Untuk mendapatkan key akses enkripsi serta mengunduh berkas APK hasil modifikasi, silakan selesaikan administrasi melalui instruksi berikut:_\n\n` +
+        `📥 **LANGKAH-LANGKAH AKTIVASI JALUR PREMIUM:**\n` +
         `1️⃣ Klik tombol **"📱 Buka QRIS di Group"** di bawah ini.\n` +
-        `2️⃣ Scan gambar **QRIS** yang tersemat di dalam group tersebut menggunakan M-Banking atau E-Wallet pilihan Anda.\n` +
-        `3️⃣ Setelah transfer berhasil, **kirim bukti screenshot** ke Admin melalui tombol kedua untuk klaim file.`,
+        `2️⃣ Scan gambar **QRIS** yang tertera di dalam group/channel tujuan menggunakan aplikasi M-Banking atau E-Wallet andalan Anda.\n` +
+        `3️⃣ Setelah transfer sukses, **kirim bukti screenshot** transaksi ke Admin melalui tombol kedua agar key unduhan dirilis secara instan.`,
         Markup.inlineKeyboard([
             [Markup.button.url('📱 ⏩ Buka QRIS di Group', LINK_GROUP_QRIS)],
             [Markup.button.url('💬 Kirim Bukti Transfer ke Admin', LINK_ADMIN)]
         ])
-    ).catch((e) => console.error("Gagal mengirim menu invoice direct group:", e));
+    );
+};
+
+// Pemicu Bayar Unpack App (Rp 500.000)
+bot.action('pay_unpack', async (ctx) => {
+    await handlePaymentResponse(ctx, '📦 UNPACK CORE RESOURCES', 'Rp 500.000,-');
+});
+
+// Pemicu Bayar Hapus Iklan (Rp 250.000)
+bot.action('pay_ads', async (ctx) => {
+    await handlePaymentResponse(ctx, '🚫 STRIP & BYPASS AD-LAYERS', 'Rp 250.000,-');
+});
+
+// Pemicu Bayar Perbaikan Aplikasi (Rp 400.000)
+bot.action('pay_fix', async (ctx) => {
+    await handlePaymentResponse(ctx, '🛠️ SOURCE CODE LOGIC REPAIR', 'Rp 400.000,-');
 });
 
 // ==========================================================================================
