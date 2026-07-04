@@ -6,7 +6,7 @@ const bot = new Telegraf('8871741160:AAH8cOnFnFjIcZFSb1WqbESm0F8aIHxTdSk');
 // Objek sementara untuk menyimpan status pilihan fitur user
 const userSessions = {};
 
-// Fungsi pembantu buat animasi progress bar (Optimasi waktu agar aman dari limit Vercel 10s)
+// Fungsi pembantu buat animasi progress bar (Waktu aman & responsif untuk Vercel)
 const delay = (ms) => new Promise(res => setTimeout(res, ms));
 
 // 1. Trigger /start
@@ -23,15 +23,12 @@ bot.start((ctx) => {
     );
 });
 
-// 2. Handler Pilihan Bahasa (Tombol langsung berganti instan, anti-delay)
+// 2. Handler Pilihan Bahasa (Pesan lanjut di bawahnya, tombol TIDAK dihapus biar stabil)
 bot.action(['lang_id', 'lang_en'], async (ctx) => {
-    // Sinyal instan ke telegram agar animasi loading di tombol langsung berhenti
+    // Beritahu Telegram request sukses biar tombol gak freeze muter
     await ctx.answerCbQuery().catch(() => {});
     
     const isIndo = ctx.callbackQuery.data === 'lang_id';
-    
-    // Hapus pesan menu bahasa biar chat bersih total secara instan
-    await ctx.deleteMessage().catch(() => {});
 
     const welcomeText = isIndo
         ? "⚡ **SYNTAXAPP MAIN MENU v1.0** ⚡\n\nSistem cloud kami siap memproses aplikasi Anda secara otomatis. Silakan pilih fitur yang ingin Anda gunakan di bawah ini:"
@@ -54,8 +51,6 @@ bot.action('menu_unpack', async (ctx) => {
     await ctx.answerCbQuery().catch(() => {});
     const userId = ctx.from.id;
     userSessions[userId] = { feature: 'unpack' }; 
-
-    await ctx.deleteMessage().catch(() => {});
     
     ctx.replyWithMarkdown(
         "📦 **FITUR: UNPACK APLIKASI**\n\n" +
@@ -70,8 +65,6 @@ bot.action('menu_remove_ads', async (ctx) => {
     const userId = ctx.from.id;
     userSessions[userId] = { feature: 'remove_ads' }; 
 
-    await ctx.deleteMessage().catch(() => {});
-
     ctx.replyWithMarkdown(
         "🚫 **FITUR: HAPUS IKLAN APLIKASI**\n\n" +
         "Silakan **kirimkan file (.apk)** target ke sini.\n" +
@@ -85,8 +78,6 @@ bot.action('menu_fix_app', async (ctx) => {
     const userId = ctx.from.id;
     userSessions[userId] = { feature: 'fix_app', step: 'waiting_text' }; 
 
-    await ctx.deleteMessage().catch(() => {});
-
     ctx.replyWithMarkdown(
         "🛠️ **FITUR: PERBAIKI APLIKASI**\n\n" +
         "Silakan **ketik dan kirim pesan terlebih dahulu** mengenai bagian apa saja atau error apa yang ingin diperbaiki di dalam aplikasi ini.\n\n" +
@@ -95,7 +86,7 @@ bot.action('menu_fix_app', async (ctx) => {
 });
 
 
-// ======================== PROCESSOR & PROGRESS BAR OPTIMIZED ========================
+// ======================== PROCESSOR & PROGRESS BAR ========================
 
 // Handler khusus menerima Teks penjelasan untuk fitur Perbaiki Aplikasi
 bot.on('text', async (ctx) => {
@@ -126,7 +117,7 @@ bot.on('document', async (ctx) => {
 
     // Jika user langsung kirim APK tanpa milih menu dulu
     if (!session) {
-        return ctx.reply('⚠️ Silakan pilih menu fiturnya dulu di `/start`, Bro, baru kirim file APK-nya.');
+        return ctx.reply('⚠️ Silakan pilih menu fiturnya dulu di atas, Bro, baru kirim file APK-nya.');
     }
 
     // Jika milih fitur perbaiki tapi main kirim APK duluan tanpa deskripsi teks
@@ -137,7 +128,7 @@ bot.on('document', async (ctx) => {
     let progressMsg;
 
     try {
-        // Jalankan Sekbar Loading Kustom berdasarkan Fitur yang dipilih user (Aman dari Vercel Timeout)
+        // Sekbar Loading Kustom (Aman dari Vercel Timeout)
         if (session.feature === 'unpack') {
             progressMsg = await ctx.reply('📥 [ ] 0% - Mengunduh file APK untuk dibongkar...');
             await delay(1000);
@@ -190,9 +181,8 @@ bot.on('document', async (ctx) => {
     ).catch((e) => console.error("Gagal kirim link unduhan:", e));
 });
 
-// 5. Handler Tombol Download -> Kirim Gambar QRIS (Optimasi Kecepatan)
+// 5. Handler Tombol Download -> Kirim Gambar QRIS
 bot.action('trigger_payment', async (ctx) => {
-    // Dipanggil secepat mungkin agar button gak nge-freeze/loading lama di HP user
     await ctx.answerCbQuery().catch(() => {});
     
     const URL_FOTO_QRIS = 'https://raw.githubusercontent.com/thelar-dev/bot-telegram-bahasa/main/qris.jpg'; 
@@ -213,7 +203,7 @@ bot.action('trigger_payment', async (ctx) => {
                 caption: textPayment,
                 parse_mode: 'Markdown',
                 ...Markup.inlineKeyboard([
-                    [Markup.button.url('💬 Kirim Bukti ke Admin', 'https://t.me/BotFather')] // Ganti pakai link Telegram lo pribadi nanti, Bro
+                    [Markup.button.url('💬 Kirim Bukti ke Admin', 'https://t.me/BotFather')] 
                 ])
             }
         );
@@ -223,8 +213,8 @@ bot.action('trigger_payment', async (ctx) => {
             textPayment, 
             Markup.inlineKeyboard([
                 [Markup.button.url('💬 Hubungi Admin', 'https://t.me/BotFather')]
-            ])
-        ).catch(() => {});
+            ]
+        )).catch(() => {});
     }
 });
 
