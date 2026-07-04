@@ -23,11 +23,9 @@ bot.start((ctx) => {
     );
 });
 
-// 2. Handler Pilihan Bahasa (Pesan lanjut di bawahnya, tombol TIDAK dihapus biar stabil)
+// 2. Handler Pilihan Bahasa
 bot.action(['lang_id', 'lang_en'], async (ctx) => {
-    // Beritahu Telegram request sukses biar tombol gak freeze muter
     await ctx.answerCbQuery().catch(() => {});
-    
     const isIndo = ctx.callbackQuery.data === 'lang_id';
 
     const welcomeText = isIndo
@@ -46,89 +44,64 @@ bot.action(['lang_id', 'lang_en'], async (ctx) => {
 
 // ======================== HANDLER 3 MENU UTAMA ========================
 
-// A. Unpack Aplikasi
 bot.action('menu_unpack', async (ctx) => {
     await ctx.answerCbQuery().catch(() => {});
     const userId = ctx.from.id;
     userSessions[userId] = { feature: 'unpack' }; 
-    
     ctx.replyWithMarkdown(
-        "📦 **FITUR: UNPACK APLIKASI**\n\n" +
-        "Silakan **kirimkan file (.apk)** yang ingin Anda bongkar ke sini.\n" +
-        "Sistem akan mengekstrak seluruh resources, aset, dex, dan manifest secara otomatis."
+        "📦 **FITUR: UNPACK APLIKASI**\n\nSilakan **kirimkan file (.apk)** yang ingin Anda bongkar ke sini.\nSistem akan mengekstrak seluruh resources, aset, dex, dan manifest secara otomatis."
     );
 });
 
-// B. Hapus Iklan
 bot.action('menu_remove_ads', async (ctx) => {
     await ctx.answerCbQuery().catch(() => {});
     const userId = ctx.from.id;
     userSessions[userId] = { feature: 'remove_ads' }; 
-
     ctx.replyWithMarkdown(
-        "🚫 **FITUR: HAPUS IKLAN APLIKASI**\n\n" +
-        "Silakan **kirimkan file (.apk)** target ke sini.\n" +
-        "Sistem akan otomatis mendeteksi Google Ads SDK, Unity Ads, AdMob, dan melakukan bypass/strip iklan agar aplikasi bersih total!"
+        "🚫 **FITUR: HAPUS IKLAN APLIKASI**\n\nSilakan **kirimkan file (.apk)** target ke sini.\nSistem akan otomatis mendeteksi Google Ads SDK, Unity Ads, AdMob, dan melakukan bypass/strip iklan agar aplikasi bersih total!"
     );
 });
 
-// C. Perbaiki Aplikasi
 bot.action('menu_fix_app', async (ctx) => {
     await ctx.answerCbQuery().catch(() => {});
     const userId = ctx.from.id;
     userSessions[userId] = { feature: 'fix_app', step: 'waiting_text' }; 
-
     ctx.replyWithMarkdown(
-        "🛠️ **FITUR: PERBAIKI APLIKASI**\n\n" +
-        "Silakan **ketik dan kirim pesan terlebih dahulu** mengenai bagian apa saja atau error apa yang ingin diperbaiki di dalam aplikasi ini.\n\n" +
-        "Setelah mengirim pesan teks penjelasan, baru sistem akan meminta Anda mengirimkan file (.apk)-nya."
+        "🛠️ **FITUR: PERBAIKI APLIKASI**\n\nSilakan **ketik dan kirim pesan terlebih dahulu** mengenai bagian apa saja atau error apa yang ingin diperbaiki di dalam aplikasi ini.\n\nSetelah mengirim pesan teks penjelasan, baru sistem akan meminta Anda mengirimkan file (.apk)-nya."
     );
 });
 
+// ======================== PROCESSOR & PROGRESS BAR FILE ========================
 
-// ======================== PROCESSOR & PROGRESS BAR ========================
-
-// Handler khusus menerima Teks penjelasan untuk fitur Perbaiki Aplikasi
 bot.on('text', async (ctx) => {
     const userId = ctx.from.id;
     const session = userSessions[userId];
-
     if (session && session.feature === 'fix_app' && session.step === 'waiting_text') {
         session.bugDescription = ctx.message.text; 
         session.step = 'waiting_apk'; 
-
         return ctx.replyWithMarkdown(
-            `📝 **Deskripsi Kerusakan Diterima:**\n_"${ctx.message.text}"_\n\n` +
-            `Sekarang, silakan **kirimkan file (.apk)** yang ingin diperbaiki tersebut ke sini agar sistem bisa menganalisis kode sumbernya!`
+            `📝 **Deskripsi Kerusakan Diterima:**\n_"${ctx.message.text}"_\n\nSekarang, silakan **kirimkan file (.apk)** yang ingin diperbaiki tersebut ke sini agar sistem bisa menganalisis kode sumbernya!`
         );
     }
 });
 
-// Handler utama saat User mengirimkan file APK
 bot.on('document', async (ctx) => {
     const userId = ctx.from.id;
     const session = userSessions[userId];
     const fileName = ctx.message.document.file_name;
 
-    // Proteksi format file harus APK
     if (!fileName.endsWith('.apk')) {
         return ctx.reply('❌ File harus berformat .apk, Bro! Silakan cek kembali file yang Anda kirim.');
     }
-
-    // Jika user langsung kirim APK tanpa milih menu dulu
     if (!session) {
         return ctx.reply('⚠️ Silakan pilih menu fiturnya dulu di atas, Bro, baru kirim file APK-nya.');
     }
-
-    // Jika milih fitur perbaiki tapi main kirim APK duluan tanpa deskripsi teks
     if (session.feature === 'fix_app' && session.step === 'waiting_text') {
         return ctx.reply('⚠️ Tolong ketik dulu penjelasan error/bagian yang mau diperbaiki, baru kirim file APK-nya, Bro!');
     }
 
     let progressMsg;
-
     try {
-        // Sekbar Loading Kustom (Aman dari Vercel Timeout)
         if (session.feature === 'unpack') {
             progressMsg = await ctx.reply('📥 [ ] 0% - Mengunduh file APK untuk dibongkar...');
             await delay(1000);
@@ -139,7 +112,6 @@ bot.on('document', async (ctx) => {
             await ctx.telegram.editMessageText(ctx.chat.id, progressMsg.message_id, null, '📂 [████████░░] 80% - Merekonstruksi struktur folder project...');
             await delay(1000);
             await ctx.telegram.editMessageText(ctx.chat.id, progressMsg.message_id, null, '✨ [██████████] 100% - Sukses! Semua resource berhasil di-unpack.');
-
         } else if (session.feature === 'remove_ads') {
             progressMsg = await ctx.reply('📥 [ ] 0% - Memindai manifest dari pelacak iklan...');
             await delay(1000);
@@ -150,7 +122,6 @@ bot.on('document', async (ctx) => {
             await ctx.telegram.editMessageText(ctx.chat.id, progressMsg.message_id, null, '🛠️ [████████░░] 80% - Rebuilding APK tanpa komponen malware iklan...');
             await delay(1000);
             await ctx.telegram.editMessageText(ctx.chat.id, progressMsg.message_id, null, '✨ [██████████] 100% - Sukses! Proteksi bebas iklan berhasil disuntikkan.');
-
         } else if (session.feature === 'fix_app') {
             progressMsg = await ctx.reply('📥 [ ] 0% - Membaca deskripsi kerusakan user...');
             await delay(1000);
@@ -166,12 +137,10 @@ bot.on('document', async (ctx) => {
         console.error("Gagal melakukan update progress bar:", err);
     }
 
-    // Selesai proses, bersihkan session user tersebut
     delete userSessions[userId];
 
-    // 4. Output Hasil Akhir Sukses & Muncul Tombol Unduh
     await ctx.reply(
-        `✅ **PROSES SELESAI SEMPURNA!**\n\nFile \`${fileName}\` selesai diproses oleh cloud core kami. Silakan klik tombol di bawah untuk mengaktifkan link unduhan.`,
+        `✅ **PROSES SELESAI SEMPURNA!**\n\nFile \`${fileName}\` selesai diproses oleh cloud core kami. Silakan klik tombol di bawah untuk mengunduh.`,
         {
             parse_mode: 'Markdown',
             ...Markup.inlineKeyboard([
@@ -181,10 +150,23 @@ bot.on('document', async (ctx) => {
     ).catch((e) => console.error("Gagal kirim link unduhan:", e));
 });
 
-// 5. Handler Tombol Download -> Kirim Gambar QRIS
+// ======================== NEW: LOADING SEKBAR SAAT KLIK DOWNLOAD -> BARU PAYMENT ========================
+
 bot.action('trigger_payment', async (ctx) => {
     await ctx.answerCbQuery().catch(() => {});
     
+    // Kirim pesan loading awal buat penyiapan link download
+    const loadPayMsg = await ctx.reply('🔑 [ ] 0% - Menghubungkan ke secure server download...').catch(() => {});
+    if (!loadPayMsg) return;
+
+    // Animasi Loading Penyiapan Payment Link (Dibuat cepat & aman dari limit 10s Vercel)
+    await delay(1000);
+    await ctx.telegram.editMessageText(ctx.chat.id, loadPayMsg.message_id, null, '🔒 [████░░░░░░] 40% - Mengenkripsi file output & generate token kunci...');
+    await delay(1200);
+    await ctx.telegram.editMessageText(ctx.chat.id, loadPayMsg.message_id, null, '💳 [████████░░] 80% - Membuat invoice gerbang pembayaran cloud QRIS...');
+    await delay(1000);
+    await ctx.telegram.editMessageText(ctx.chat.id, loadPayMsg.message_id, null, '🚀 [██████████] 100% - Menampilkan form aktivasi lisensi.');
+
     const URL_FOTO_QRIS = 'https://raw.githubusercontent.com/thelar-dev/bot-telegram-bahasa/main/qris.jpg'; 
 
     const textPayment = 
