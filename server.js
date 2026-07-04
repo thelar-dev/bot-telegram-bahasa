@@ -1,7 +1,7 @@
 const { Telegraf, Markup } = require('telegraf');
 const express = require('express');
 
-// MASUKKAN TOKEN BOTFAHER LO DI SINI
+// Token asli lo udah terpasang di sini, aman!
 const bot = new Telegraf('8871741160:AAH8cOnFnFjIcZFSb1WqbESm0F8aIHxTdSk');
 
 // 1. Trigger /start
@@ -33,7 +33,7 @@ bot.action(['lang_id', 'lang_en'], async (ctx) => {
     ctx.replyWithMarkdown(textMenu);
 });
 
-// 3. Otomatis Detect File APK + Simulasi Progress Bar
+// 3. Otomatis Detect File APK + Simulasi Progress Bar (Sekbar)
 bot.on('document', async (ctx) => {
     const fileName = ctx.message.document.file_name;
     
@@ -45,7 +45,7 @@ bot.on('document', async (ctx) => {
     // Pesan awal progress bar
     const progressMsg = await ctx.reply('📥 [ ] 0% - Mengunduh file APK...');
 
-    // Fungsi pembantu buat animasi progress bar (Sekbar)
+    // Fungsi pembantu buat animasi progress bar
     const delay = (ms) => new Promise(res => setTimeout(res, ms));
 
     await delay(1200);
@@ -72,25 +72,44 @@ bot.on('document', async (ctx) => {
     );
 });
 
-// 5. Handler saat tombol Download diklik -> Muncul Detail List Pembayaran
+// 5. Handler saat tombol Download diklik -> Kirim Gambar QRIS + Deskripsi
 bot.action('trigger_payment', async (ctx) => {
     await ctx.answerCbQuery();
     
+    // Link mengarah ke file mentah qris lo di repository GitHub lo
+    const URL_FOTO_QRIS = 'https://raw.githubusercontent.com/thelar-dev/bot-telegram-bahasa/main/qris.jpg'; 
+
     const textPayment = 
         `💳 **FORM PEMBAYARAN & AKTIVASI LISENSI**\n\n` +
-        `Untuk mengunduh output build APK Mod, silakan selesaikan pembayaran lisensi alat sebesar:\n` +
+        `Untuk mengunduh output build APK Mod, silakan scan QRIS di atas dan selesaikan pembayaran lisensi sebesar:\n` +
         `💰 **Rp 25.000,-**\n\n` +
         `**Metode Pembayaran Tersedia:**\n` +
-        `• 🏛️ Bank Transfer (Virtual Account / Debit)\n` +
-        `• 📱 E-Wallet (DANA / OVO / GoPay)\n\n` +
-        `*Silakan hubungi administrator setelah melakukan transfer untuk mendapatkan key aktivasi download.*`;
+        `• 📱 Semua E-Wallet (DANA, OVO, GoPay, LinkAja)\n` +
+        `• 🏛️ Semua M-Banking (BCA, Mandiri, BRI, dll)\n\n` +
+        `*Catatan: Setelah transfer berhasil, kirimkan bukti screenshot pembayaran ke Admin untuk mendapatkan Key Aktivasi download.*`;
 
-    ctx.replyWithMarkdown(
-        textPayment,
-        Markup.inlineKeyboard([
-            [Markup.button.url('💬 Hubungi Admin / Bayar', 'https://t.me/BotFather')] // Ganti pakai link telegram lo pribadi nanti
-        ])
-    );
+    try {
+        // Mengirim foto QRIS beserta keterangannya di bawah gambar
+        await ctx.replyWithPhoto(
+            { url: URL_FOTO_QRIS },
+            {
+                caption: textPayment,
+                parse_mode: 'Markdown',
+                ...Markup.inlineKeyboard([
+                    [Markup.button.url('💬 Kirim Bukti ke Admin', 'https://t.me/BotFather')] // Nanti link t.me ini ganti ke akun lo pribadi, Bro!
+                ])
+            }
+        );
+    } catch (error) {
+        console.error("Gagal mengirim foto QRIS:", error);
+        // Backup teks biasa kalau misal link fotonya down/error biar bot gak hang
+        ctx.replyWithMarkdown(
+            textPayment, 
+            Markup.inlineKeyboard([
+                [Markup.button.url('💬 Hubungi Admin', 'https://t.me/BotFather')]
+            ])
+        );
+    }
 });
 
 const app = express();
