@@ -1,10 +1,10 @@
 const { Telegraf, Markup } = require('telegraf');
 const express = require('express');
 
-// GANTI teks di bawah ini dengan Token yang lo dapet dari BotFather tadi!
+// GANTI dengan Token asli dari BotFather lo!
 const bot = new Telegraf('8871741160:AAH8cOnFnFjIcZFSb1WqbESm0F8aIHxTdSk');
 
-// Fungsi saat orang pertama kali klik /start di bot lo
+
 bot.start((ctx) => {
     const namaUser = ctx.from.first_name || 'User';
     ctx.reply(
@@ -18,27 +18,29 @@ bot.start((ctx) => {
     );
 });
 
-// Respon ketika tombol "Bahasa Indonesia" diklik
 bot.action('lang_id', (ctx) => {
     ctx.answerCbQuery();
-    ctx.reply('Anda memilih Bahasa Indonesia. Silakan ketik perintah atau pertanyaan Anda!');
+    ctx.reply('Anda memilih Bahasa Indonesia. Silakan ketik perintah atau pertanyaan Anda selanjutnya!');
 });
 
-// Respon ketika tombol "English" diklik
 bot.action('lang_en', (ctx) => {
     ctx.answerCbQuery();
-    ctx.reply('You selected English. Please type your command or question!');
+    ctx.reply('You selected English. Please type your command or question next!');
 });
 
-// Menjalankan bot Telegram
-bot.launch().then(() => console.log('Bot Telegram berhasil berjalan!'));
-
-// Setup Server Express (Ini wajib ditaruh supaya pas di-hosting nanti bot-nya gak mati otomatis)
 const app = express();
-const PORT = process.env.PORT || 3000;
-app.get('/', (req, res) => { res.send('Bot Online 24 Jam!'); });
-app.listen(PORT, () => { console.log(`Server aktif di port ${PORT}`); });
 
-// Pengaman jika bot dihentikan mendadak agar tidak crash
-process.once('SIGINT', () => bot.stop('SIGINT'));
-process.once('SIGTERM', () => bot.stop('SIGTERM'));
+// Set Webhook biar Telegram ngirim data ke Vercel lo
+// Isikan URL Vercel lo lengkap dari screenshot tadi di bawah ini!
+const VERCEL_URL = 'https://bot-telegram-bahasa.vercel.app'; 
+
+app.use(bot.webhookCallback('/api/telegram'));
+bot.telegram.setWebhook(`${VERCEL_URL}/api/telegram`)
+    .then(() => console.log('Webhook Terpasang!'))
+    .catch((err) => console.error('Gagal pasang webhook:', err));
+
+app.get('/', (req, res) => {
+    res.send('Bot Online 24 Jam!');
+});
+
+module.exports = app;
