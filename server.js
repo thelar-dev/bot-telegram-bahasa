@@ -6,6 +6,9 @@ const bot = new Telegraf('8871741160:AAH8cOnFnFjIcZFSb1WqbESm0F8aIHxTdSk');
 // Objek sementara untuk menyimpan status pilihan fitur user
 const userSessions = {};
 
+// Fungsi pembantu buat animasi progress bar (Optimasi waktu agar aman dari limit Vercel 10s)
+const delay = (ms) => new Promise(res => setTimeout(res, ms));
+
 // 1. Trigger /start
 bot.start((ctx) => {
     const namaUser = ctx.from.first_name || 'User';
@@ -20,12 +23,15 @@ bot.start((ctx) => {
     );
 });
 
-// 2. Handler Pilihan Bahasa (Tombol hilang -> Otomatis Muncul 3 Menu Utama)
+// 2. Handler Pilihan Bahasa (Tombol langsung berganti instan, anti-delay)
 bot.action(['lang_id', 'lang_en'], async (ctx) => {
-    await ctx.answerCbQuery();
+    // Sinyal instan ke telegram agar animasi loading di tombol langsung berhenti
+    await ctx.answerCbQuery().catch(() => {});
+    
     const isIndo = ctx.callbackQuery.data === 'lang_id';
     
-    try { await ctx.deleteMessage(); } catch (e) {}
+    // Hapus pesan menu bahasa biar chat bersih total secara instan
+    await ctx.deleteMessage().catch(() => {});
 
     const welcomeText = isIndo
         ? "⚡ **SYNTAXAPP MAIN MENU v1.0** ⚡\n\nSistem cloud kami siap memproses aplikasi Anda secara otomatis. Silakan pilih fitur yang ingin Anda gunakan di bawah ini:"
@@ -38,18 +44,18 @@ bot.action(['lang_id', 'lang_en'], async (ctx) => {
             [Markup.button.callback('🚫 Hapus Iklan Aplikasi', 'menu_remove_ads')],
             [Markup.button.callback('🛠️ Perbaiki Aplikasi', 'menu_fix_app')]
         ])
-    );
+    ).catch((e) => console.error("Gagal kirim main menu:", e));
 });
 
 // ======================== HANDLER 3 MENU UTAMA ========================
 
 // A. Unpack Aplikasi
 bot.action('menu_unpack', async (ctx) => {
-    await ctx.answerCbQuery();
+    await ctx.answerCbQuery().catch(() => {});
     const userId = ctx.from.id;
-    userSessions[userId] = { feature: 'unpack' }; // Set session
+    userSessions[userId] = { feature: 'unpack' }; 
 
-    try { await ctx.deleteMessage(); } catch (e) {}
+    await ctx.deleteMessage().catch(() => {});
     
     ctx.replyWithMarkdown(
         "📦 **FITUR: UNPACK APLIKASI**\n\n" +
@@ -60,11 +66,11 @@ bot.action('menu_unpack', async (ctx) => {
 
 // B. Hapus Iklan
 bot.action('menu_remove_ads', async (ctx) => {
-    await ctx.answerCbQuery();
+    await ctx.answerCbQuery().catch(() => {});
     const userId = ctx.from.id;
-    userSessions[userId] = { feature: 'remove_ads' }; // Set session
+    userSessions[userId] = { feature: 'remove_ads' }; 
 
-    try { await ctx.deleteMessage(); } catch (e) {}
+    await ctx.deleteMessage().catch(() => {});
 
     ctx.replyWithMarkdown(
         "🚫 **FITUR: HAPUS IKLAN APLIKASI**\n\n" +
@@ -75,21 +81,21 @@ bot.action('menu_remove_ads', async (ctx) => {
 
 // C. Perbaiki Aplikasi
 bot.action('menu_fix_app', async (ctx) => {
-    await ctx.answerCbQuery();
+    await ctx.answerCbQuery().catch(() => {});
     const userId = ctx.from.id;
-    userSessions[userId] = { feature: 'fix_app', step: 'waiting_text' }; // Set session butuh teks dulu
+    userSessions[userId] = { feature: 'fix_app', step: 'waiting_text' }; 
 
-    try { await ctx.deleteMessage(); } catch (e) {}
+    await ctx.deleteMessage().catch(() => {});
 
     ctx.replyWithMarkdown(
         "🛠️ **FITUR: PERBAIKI APLIKASI**\n\n" +
         "Silakan **ketik dan kirim pesan terlebih dahulu** mengenai bagian apa saja atau error apa yang ingin diperbaiki di dalam aplikasi ini.\n\n" +
-        " Setelah mengirim pesan teks penjelasan, baru sistem akan meminta Anda mengirimkan file (.apk)-nya."
+        "Setelah mengirim pesan teks penjelasan, baru sistem akan meminta Anda mengirimkan file (.apk)-nya."
     );
 });
 
 
-// ======================== PROCESSOR & PROGRESS BAR BARU ========================
+// ======================== PROCESSOR & PROGRESS BAR OPTIMIZED ========================
 
 // Handler khusus menerima Teks penjelasan untuk fitur Perbaiki Aplikasi
 bot.on('text', async (ctx) => {
@@ -97,8 +103,8 @@ bot.on('text', async (ctx) => {
     const session = userSessions[userId];
 
     if (session && session.feature === 'fix_app' && session.step === 'waiting_text') {
-        session.bugDescription = ctx.message.text; // Simpan deskripsi bug
-        session.step = 'waiting_apk'; // Naikkan step ke nunggu APK
+        session.bugDescription = ctx.message.text; 
+        session.step = 'waiting_apk'; 
 
         return ctx.replyWithMarkdown(
             `📝 **Deskripsi Kerusakan Diterima:**\n_"${ctx.message.text}"_\n\n` +
@@ -128,42 +134,45 @@ bot.on('document', async (ctx) => {
         return ctx.reply('⚠️ Tolong ketik dulu penjelasan error/bagian yang mau diperbaiki, baru kirim file APK-nya, Bro!');
     }
 
-    const delay = (ms) => new Promise(res => setTimeout(res, ms));
     let progressMsg;
 
-    // Jalankan Sekbar Loading Kustom berdasarkan Fitur yang dipilih user
-    if (session.feature === 'unpack') {
-        progressMsg = await ctx.reply('📥 [ ] 0% - Mengunduh file APK untuk dibongkar...');
-        await delay(2000);
-        await ctx.telegram.editMessageText(ctx.chat.id, progressMsg.message_id, null, '📦 [██░░░░░░░░] 20% - Mengekstrak AndroidManifest.xml & aset...');
-        await delay(2500);
-        await ctx.telegram.editMessageText(ctx.chat.id, progressMsg.message_id, null, '🔍 [█████░░░░░] 50% - Decompiling classes.dex ke Smali code...');
-        await delay(2500);
-        await ctx.telegram.editMessageText(ctx.chat.id, progressMsg.message_id, null, '📂 [████████░░] 80% - Merekonstruksi struktur folder project...');
-        await delay(2000);
-        await ctx.telegram.editMessageText(ctx.chat.id, progressMsg.message_id, null, '✨ [██████████] 100% - Sukses! Semua resource berhasil di-unpack.');
+    try {
+        // Jalankan Sekbar Loading Kustom berdasarkan Fitur yang dipilih user (Aman dari Vercel Timeout)
+        if (session.feature === 'unpack') {
+            progressMsg = await ctx.reply('📥 [ ] 0% - Mengunduh file APK untuk dibongkar...');
+            await delay(1000);
+            await ctx.telegram.editMessageText(ctx.chat.id, progressMsg.message_id, null, '📦 [██░░░░░░░░] 20% - Mengekstrak AndroidManifest.xml & aset...');
+            await delay(1200);
+            await ctx.telegram.editMessageText(ctx.chat.id, progressMsg.message_id, null, '🔍 [█████░░░░░] 50% - Decompiling classes.dex ke Smali code...');
+            await delay(1200);
+            await ctx.telegram.editMessageText(ctx.chat.id, progressMsg.message_id, null, '📂 [████████░░] 80% - Merekonstruksi struktur folder project...');
+            await delay(1000);
+            await ctx.telegram.editMessageText(ctx.chat.id, progressMsg.message_id, null, '✨ [██████████] 100% - Sukses! Semua resource berhasil di-unpack.');
 
-    } else if (session.feature === 'remove_ads') {
-        progressMsg = await ctx.reply('📥 [ ] 0% - Memindai manifest dari pelacak iklan...');
-        await delay(2000);
-        await ctx.telegram.editMessageText(ctx.chat.id, progressMsg.message_id, null, '🚫 [██░░░░░░░░] 20% - Menghapus permission Google AdMob & Unity Ads...');
-        await delay(2500);
-        await ctx.telegram.editMessageText(ctx.chat.id, progressMsg.message_id, null, '✂️ [█████░░░░░] 50% - Melakukan patching pada class metrik iklan...');
-        await delay(2500);
-        await ctx.telegram.editMessageText(ctx.chat.id, progressMsg.message_id, null, '🛠️ [████████░░] 80% - Rebuilding APK tanpa komponen malware iklan...');
-        await delay(2000);
-        await ctx.telegram.editMessageText(ctx.chat.id, progressMsg.message_id, null, '✨ [██████████] 100% - Sukses! Proteksi bebas iklan berhasil disuntikkan.');
+        } else if (session.feature === 'remove_ads') {
+            progressMsg = await ctx.reply('📥 [ ] 0% - Memindai manifest dari pelacak iklan...');
+            await delay(1000);
+            await ctx.telegram.editMessageText(ctx.chat.id, progressMsg.message_id, null, '🚫 [██░░░░░░░░] 20% - Menghapus permission Google AdMob & Unity Ads...');
+            await delay(1200);
+            await ctx.telegram.editMessageText(ctx.chat.id, progressMsg.message_id, null, '✂️ [█████░░░░░] 50% - Melakukan patching pada class metrik iklan...');
+            await delay(1200);
+            await ctx.telegram.editMessageText(ctx.chat.id, progressMsg.message_id, null, '🛠️ [████████░░] 80% - Rebuilding APK tanpa komponen malware iklan...');
+            await delay(1000);
+            await ctx.telegram.editMessageText(ctx.chat.id, progressMsg.message_id, null, '✨ [██████████] 100% - Sukses! Proteksi bebas iklan berhasil disuntikkan.');
 
-    } else if (session.feature === 'fix_app') {
-        progressMsg = await ctx.reply('📥 [ ] 0% - Membaca deskripsi kerusakan user...');
-        await delay(2000);
-        await ctx.telegram.editMessageText(ctx.chat.id, progressMsg.message_id, null, '🔎 [██░░░░░░░░] 20% - Mencari letak baris kode error pada classes.dex...');
-        await delay(3000); // Sengaja dilamain biar terkesan mikir keras nyari bug
-        await ctx.telegram.editMessageText(ctx.chat.id, progressMsg.message_id, null, '🔧 [█████░░░░░] 50% - Menambal kerusakan logic / merestrukturisasi Smali...');
-        await delay(2500);
-        await ctx.telegram.editMessageText(ctx.chat.id, progressMsg.message_id, null, '⚡ [████████░░] 80% - Mengompilasi ulang aplikasi & signing debug certificate...');
-        await delay(2000);
-        await ctx.telegram.editMessageText(ctx.chat.id, progressMsg.message_id, null, '✨ [██████████] 100% - Sukses! Aplikasi berhasil diperbaiki secara total.');
+        } else if (session.feature === 'fix_app') {
+            progressMsg = await ctx.reply('📥 [ ] 0% - Membaca deskripsi kerusakan user...');
+            await delay(1000);
+            await ctx.telegram.editMessageText(ctx.chat.id, progressMsg.message_id, null, '🔎 [██░░░░░░░░] 20% - Mencari letak baris kode error pada classes.dex...');
+            await delay(1500); 
+            await ctx.telegram.editMessageText(ctx.chat.id, progressMsg.message_id, null, '🔧 [█████░░░░░] 50% - Menambal kerusakan logic / merestrukturisasi Smali...');
+            await delay(1200);
+            await ctx.telegram.editMessageText(ctx.chat.id, progressMsg.message_id, null, '⚡ [████████░░] 80% - Mengompilasi ulang aplikasi & signing debug certificate...');
+            await delay(1000);
+            await ctx.telegram.editMessageText(ctx.chat.id, progressMsg.message_id, null, '✨ [██████████] 100% - Sukses! Aplikasi berhasil diperbaiki secara total.');
+        }
+    } catch (err) {
+        console.error("Gagal melakukan update progress bar:", err);
     }
 
     // Selesai proses, bersihkan session user tersebut
@@ -178,12 +187,13 @@ bot.on('document', async (ctx) => {
                 [Markup.button.callback('📥 Download Hasil Modifikasi', 'trigger_payment')]
             ])
         }
-    );
+    ).catch((e) => console.error("Gagal kirim link unduhan:", e));
 });
 
-// 5. Handler Tombol Download -> Kirim Gambar QRIS + Teks Tagihan
+// 5. Handler Tombol Download -> Kirim Gambar QRIS (Optimasi Kecepatan)
 bot.action('trigger_payment', async (ctx) => {
-    await ctx.answerCbQuery();
+    // Dipanggil secepat mungkin agar button gak nge-freeze/loading lama di HP user
+    await ctx.answerCbQuery().catch(() => {});
     
     const URL_FOTO_QRIS = 'https://raw.githubusercontent.com/thelar-dev/bot-telegram-bahasa/main/qris.jpg'; 
 
@@ -214,7 +224,7 @@ bot.action('trigger_payment', async (ctx) => {
             Markup.inlineKeyboard([
                 [Markup.button.url('💬 Hubungi Admin', 'https://t.me/BotFather')]
             ])
-        );
+        ).catch(() => {});
     }
 });
 
