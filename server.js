@@ -1,22 +1,42 @@
 const { Telegraf, Markup } = require('telegraf');
 const express = require('express');
-const { kv } = require('@vercel/kv'); // Database anti-reset memori
+const { createClient } = require('@supabase/supabase-js');
+
+// KONEKSI DATABASE SUPABASE (SUDAH AKTIF)
+const SUPABASE_URL = 'https://ndjpuirztmcjqceisemy.supabase.co'; 
+const SUPABASE_KEY = 'sb_publishable_kIgvA04yd7fE4xRBT-ABew_pn9q5Rq5';
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const bot = new Telegraf('8871741160:AAH8cOnFnFjIcZFSb1WqbESm0F8aIHxTdSk');
 
-// ID Telegram pribadi lo
+// ID Telegram pribadi lo (Admin)
 const ADMIN_ID = '7086755316'; 
 
-// Map tracker sementara untuk reply admin (bisa tetap di memori karena respon admin instan)
+// Map tracker sementara untuk reply admin
 const adminReplies = {};
 
 const delay = (ms) => new Promise(res => setTimeout(res, ms));
+
+// Fungsi Pembantu Database (Get, Set, & Delete Session)
+async function getUserSession(userId) {
+    const { data, error } = await supabase.from('sessions').select('session_data').eq('user_id', userId).single();
+    if (error || !data) return null;
+    return data.session_data;
+}
+
+async function setUserSession(userId, sessionData) {
+    await supabase.from('sessions').upsert({ user_id: userId, session_data: sessionData });
+}
+
+async function deleteUserSession(userId) {
+    await supabase.from('sessions').delete().eq('user_id', userId);
+}
 
 // 1. Trigger /start
 bot.start((ctx) => {
     const namaUser = ctx.from.first_name || 'User';
     ctx.replyWithMarkdown(
-        `👋 **⚡ WELCOME TO SYNTAXAPP MODDING CORE v3.0 ⚡**\n\n` +
+        `👋 **⚡ WELCOME TO SYNTAXAPP MODDING CORE v3.1 ⚡**\n\n` +
         `Halo **${namaUser}**! Sistem otomatis kami siap membedah, memodifikasi, dan mengoptimalkan aplikasi Anda dengan standar enkripsi cloud tertinggi.\n\n` +
         ` Silakan pilih bahasa untuk memulai / Please select your language:`,
         Markup.inlineKeyboard([
@@ -28,12 +48,10 @@ bot.start((ctx) => {
     );
 });
 
-// Perintah /status: Sekarang ngambil data asli dan permanen dari database Vercel KV
+// Perintah /status: Real-time hitung persen, AMAN 100% data tersimpan di database Supabase
 bot.command('status', async (ctx) => {
     const userId = ctx.from.id;
-    
-    // Ambil data session user dari database
-    const session = await kv.get(`session:${userId}`);
+    const session = await getUserSession(userId);
 
     if (!session || session.feature !== 'fix_app' || !session.startTime) {
         return ctx.replyWithMarkdown('⚠️ **Tidak ada antrean perbaikan source code aktif untuk akun Anda saat ini.**');
@@ -95,29 +113,29 @@ bot.action(['lang_id', 'lang_en'], async (ctx) => {
     );
 });
 
-// ======================== HANDLER MENU UTAMA (SAVE TO KV) ========================
+// ======================== HANDLER MENU UTAMA ========================
 
 bot.action('menu_unpack', async (ctx) => {
     await ctx.answerCbQuery().catch(() => {});
-    await kv.set(`session:${ctx.from.id}`, { feature: 'unpack' });
+    await setUserSession(ctx.from.id, { feature: 'unpack' });
     ctx.replyWithMarkdown("📦 **[MODE DECOMPILE: UNPACK RESOURCES]**\n\n👉 **Silakan langsung kirimkan file (.apk) target ke sini, Bro!**");
 });
 
 bot.action('menu_remove_ads', async (ctx) => {
     await ctx.answerCbQuery().catch(() => {});
-    await kv.set(`session:${ctx.from.id}`, { feature: 'remove_ads' });
+    await setUserSession(ctx.from.id, { feature: 'remove_ads' });
     ctx.replyWithMarkdown("🚫 **[MODE BYPASS: STRIP AD-LAYERS]**\n\n👉 **Silakan langsung kirimkan file (.apk) target ke sini, Bro!**");
 });
 
 bot.action('menu_fix_app', async (ctx) => {
     await ctx.answerCbQuery().catch(() => {});
-    await kv.set(`session:${ctx.from.id}`, { feature: 'fix_app', step: 'waiting_text' });
+    await setUserSession(ctx.from.id, { feature: 'fix_app', step: 'waiting_text' });
     ctx.replyWithMarkdown("🛠️ **[MODE RECONSTRUCT: SOURCE CODE REPAIR]**\n\n📝 **LANGKAH PERTAMA:**\nSilakan **ketik dan kirimkan deskripsi detail / pesan teks** mengenai bagian error terlebih dahulu.");
 });
 
 bot.action('menu_jiagu', async (ctx) => {
     await ctx.answerCbQuery().catch(() => {});
-    await kv.set(`session:${ctx.from.id}`, { feature: 'jiagu' });
+    await setUserSession(ctx.from.id, { feature: 'jiagu' });
     ctx.replyWithMarkdown("🛡️ **[MODE ENCRYPTION: PROTECTION 360 JIAGU]**\n\n👉 **Silakan langsung kirimkan file (.apk) target ke sini, Bro!**");
 });
 
@@ -125,7 +143,7 @@ bot.action('menu_jiagu', async (ctx) => {
 
 bot.on('photo', async (ctx) => {
     const userId = ctx.from.id;
-    const session = await kv.get(`session:${userId}`);
+    const session = await getUserSession(userId);
     
     const currentFeature = session ? session.feature : 'premium_generic';
     const fileId = ctx.message.photo[ctx.message.photo.length - 1].file_id;
@@ -152,7 +170,6 @@ bot.on('text', async (ctx) => {
     const userId = ctx.from.id;
     const textMessage = ctx.message.text;
 
-    // Logika Admin balas OK
     if (String(userId) === String(ADMIN_ID) && ctx.message.reply_to_message) {
         const linkedSession = adminReplies[ctx.message.reply_to_message.message_id];
         
@@ -175,7 +192,7 @@ bot.on('text', async (ctx) => {
                 }
                 ctx.reply(`✅ **Sukses terkirim ke User (ID: ${userTarget}).**`);
                 delete adminReplies[ctx.message.reply_to_message.message_id];
-                await kv.del(`session:${userTarget}`);
+                await deleteUserSession(userTarget);
             } catch (error) {
                 ctx.reply(`❌ Terjadi error: ${error.message}`);
             }
@@ -183,18 +200,18 @@ bot.on('text', async (ctx) => {
         }
     }
 
-    const session = await kv.get(`session:${userId}`);
+    const session = await getUserSession(userId);
     if (session && session.feature === 'fix_app' && session.step === 'waiting_text') {
         session.bugDescription = textMessage; 
         session.step = 'waiting_apk'; 
-        await kv.set(`session:${userId}`, session);
+        await setUserSession(userId, session);
         return ctx.replyWithMarkdown(`✅ **DESKRIPSI PARSING BERHASIL**\n\n👉 **Sekarang, silakan kirimkan file (.apk) yang ingin diperbaiki!**`);
     }
 });
 
 bot.on('document', async (ctx) => {
     const userId = ctx.from.id;
-    const session = await kv.get(`session:${userId}`);
+    const session = await getUserSession(userId);
     const fileName = ctx.message.document.file_name;
     const fileId = ctx.message.document.file_id;
 
@@ -204,10 +221,9 @@ bot.on('document', async (ctx) => {
     session.savedApkId = fileId;
     session.savedApkName = fileName;
 
-    // JIKA FITUR FIX APP -> MASUK DATABASE DAN PROSES ANTRIAN 3 HARI MULAI
     if (session.feature === 'fix_app') {
-        session.startTime = Date.now(); // Disimpan permanen di database
-        await kv.set(`session:${userId}`, session);
+        session.startTime = Date.now(); 
+        await setUserSession(userId, session);
         return ctx.replyWithMarkdown(
             `📥 **BERKAS TARGET BERHASIL DIUNGGAH**\n\n` +
             `🛠️ **Fitur Pilihan:** \`Source Code Logic Repair\`\n\n` +
@@ -217,8 +233,7 @@ bot.on('document', async (ctx) => {
         );
     }
 
-    // Untuk fitur lain tetap jalankan animasi progress bar kilat
-    await kv.set(`session:${userId}`, session);
+    await setUserSession(userId, session);
     const steps = [
         { pct: 30, txt: 'Mengekstrak dan memetakan biner...' },
         { pct: 70, txt: 'Menjalankan skrip modifikasi cloud...' },
