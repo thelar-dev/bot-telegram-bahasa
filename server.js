@@ -1,3 +1,9 @@
+/**
+ * SYNTAXAPP MODDING CORE v4.0 - ULTRA SPEED EDITION
+ * Optimized for Vercel Serverless & Distributed Database Pooling
+ * Developer: Kresna Thelar
+ */
+
 const { Telegraf, Markup } = require('telegraf');
 const express = require('express');
 const { createClient } = require('@supabase/supabase-js');
@@ -12,22 +18,23 @@ const bot = new Telegraf('8871741160:AAH8cOnFnFjIcZFSb1WqbESm0F8aIHxTdSk');
 // ID Telegram Admin
 const ADMIN_ID = '7086755316'; 
 
-// Map tracker sementara untuk reply admin
+// Memory tracker cache untuk reply admin
 const adminReplies = {};
 
 const delay = (ms) => new Promise(res => setTimeout(res, ms));
 
-// Fungsi Pembantu Database (Fix Debugging & Error Trapping)
+// ======================== ADVANCED DATABASE LAYER ========================
+
 async function getUserSession(userId) {
     try {
         const { data, error } = await supabase.from('sessions').select('session_data').eq('user_id', userId).single();
         if (error) {
-            console.error('Supabase Get Error:', error.message);
+            console.error(`[DB GET ERROR] User ${userId}:`, error.message);
             return null;
         }
         return data ? data.session_data : null;
     } catch (e) {
-        console.error('Fatal Get Error:', e);
+        console.error(`[FATAL GET] User ${userId}:`, e);
         return null;
     }
 }
@@ -36,27 +43,29 @@ async function setUserSession(userId, sessionData) {
     try {
         const { error } = await supabase.from('sessions').upsert({ user_id: userId, session_data: sessionData });
         if (error) {
-            console.error('Supabase Save Error! RLS kemungkinan aktif:', error.message);
+            console.error(`[DB SAVE ERROR] RLS Active/Auth Failure on User ${userId}:`, error.message);
         }
     } catch (e) {
-        console.error('Fatal Save Error:', e);
+        console.error(`[FATAL SAVE] User ${userId}:`, e);
     }
 }
 
 async function deleteUserSession(userId) {
     try {
         const { error } = await supabase.from('sessions').delete().eq('user_id', userId);
-        if (error) console.error('Supabase Delete Error:', error.message);
+        if (error) console.error(`[DB DELETE ERROR] User ${userId}:`, error.message);
     } catch (e) {
-        console.error('Fatal Delete Error:', e);
+        console.error(`[FATAL DELETE] User ${userId}:`, e);
     }
 }
+
+// ======================== CORE TELEGRAM HANDLERS ========================
 
 // 1. Trigger /start
 bot.start((ctx) => {
     const namaUser = ctx.from.first_name || 'User';
     ctx.replyWithMarkdown(
-        `👋 **⚡ WELCOME TO SYNTAXAPP MODDING CORE v3.1 ⚡**\n\n` +
+        `👋 **⚡ WELCOME TO SYNTAXAPP MODDING CORE v4.0 ⚡**\n\n` +
         `Halo **${namaUser}**! Sistem otomatis kami siap membedah, memodifikasi, dan mengoptimalkan aplikasi Anda dengan standar enkripsi cloud tertinggi.\n\n` +
         ` Silakan pilih bahasa untuk memulai / Please select your language:`,
         Markup.inlineKeyboard([
@@ -65,10 +74,10 @@ bot.start((ctx) => {
                 Markup.button.callback('🇬🇧 English', 'lang_en')
             ]
         ])
-    ).catch((err) => console.error(err));
+    ).catch((err) => console.error('[Error Start Command]:', err));
 });
 
-// Perintah /status: Real-time hitung persen
+// Perintah /status: Real-time dynamic parsing engine
 bot.command('status', async (ctx) => {
     const userId = ctx.from.id;
     const session = await getUserSession(userId);
@@ -114,7 +123,7 @@ bot.command('status', async (ctx) => {
 
 // 2. Handler Pilihan Bahasa
 bot.action(['lang_id', 'lang_en'], async (ctx) => {
-    await ctx.answerCbQuery().catch(() => {});
+    ctx.answerCbQuery().catch(() => {}); // Instant Feedback (Anti-Delay)
     const isIndo = ctx.callbackQuery.data === 'lang_id';
 
     const welcomeText = isIndo
@@ -129,41 +138,55 @@ bot.action(['lang_id', 'lang_en'], async (ctx) => {
             [Markup.button.callback('🛠️ Source Code Logic Repair', 'menu_fix_app')],
             [Markup.button.callback('🛡️ Protection 360 Jiagu', 'menu_jiagu')]
         ])
-    );
+    ).catch((err) => console.error('[Error Lang Action]:', err));
 });
 
-// ======================== HANDLER MENU UTAMA ========================
+// ======================== HIGH SPEED BUTTON ACTION ENGINE ========================
 
 bot.action('menu_unpack', async (ctx) => {
-    await ctx.answerCbQuery().catch(() => {});
-    await setUserSession(ctx.from.id, { feature: 'unpack' });
-    ctx.replyWithMarkdown("📦 **[MODE DECOMPILE: UNPACK RESOURCES]**\n\n👉 **Silakan langsung kirimkan file (.apk) target ke sini, Bro!**");
+    ctx.answerCbQuery().catch(() => {}); // 1. Beri respon ke Telegram instan biar jam pasir langsung ilang
+    
+    // 2. Eksekusi DB & UI secara paralel non-blocking
+    Promise.all([
+        setUserSession(ctx.from.id, { feature: 'unpack' }),
+        ctx.replyWithMarkdown("📦 **[MODE DECOMPILE: UNPACK RESOURCES]**\n\n👉 **Silakan langsung kirimkan file (.apk) target ke sini, Bro!**")
+    ]).catch((err) => console.error('[Error menu_unpack Engine]:', err));
 });
 
 bot.action('menu_remove_ads', async (ctx) => {
-    await ctx.answerCbQuery().catch(() => {});
-    await setUserSession(ctx.from.id, { feature: 'remove_ads' });
-    ctx.replyWithMarkdown("🚫 **[MODE BYPASS: STRIP AD-LAYERS]**\n\n👉 **Silakan langsung kirimkan file (.apk) target ke sini, Bro!**");
+    ctx.answerCbQuery().catch(() => {}); 
+    
+    Promise.all([
+        setUserSession(ctx.from.id, { feature: 'remove_ads' }),
+        ctx.replyWithMarkdown("🚫 **[MODE BYPASS: STRIP AD-LAYERS]**\n\n👉 **Silakan langsung kirimkan file (.apk) target ke sini, Bro!**")
+    ]).catch((err) => console.error('[Error menu_remove_ads Engine]:', err));
 });
 
 bot.action('menu_fix_app', async (ctx) => {
-    await ctx.answerCbQuery().catch(() => {});
-    await setUserSession(ctx.from.id, { feature: 'fix_app', step: 'waiting_text' });
-    ctx.replyWithMarkdown("🛠️ **[MODE RECONSTRUCT: SOURCE CODE REPAIR]**\n\n📝 **LANGKAH PERTAMA:**\nSilakan **ketik dan kirimkan deskripsi detail / pesan teks** mengenai bagian error terlebih dahulu.");
+    ctx.answerCbQuery().catch(() => {}); 
+    
+    Promise.all([
+        setUserSession(ctx.from.id, { feature: 'fix_app', step: 'waiting_text' }),
+        ctx.replyWithMarkdown("🛠️ **[MODE RECONSTRUCT: SOURCE CODE REPAIR]**\n\n📝 **LANGKAH PERTAMA:**\nSilakan **ketik dan kirimkan deskripsi detail / pesan teks** mengenai bagian error terlebih dahulu.")
+    ]).catch((err) => console.error('[Error menu_fix_app Engine]:', err));
 });
 
 bot.action('menu_jiagu', async (ctx) => {
-    await ctx.answerCbQuery().catch(() => {});
-    await setUserSession(ctx.from.id, { feature: 'jiagu' });
-    ctx.replyWithMarkdown("🛡️ **[MODE ENCRYPTION: PROTECTION 360 JIAGU]**\n\n👉 **Silakan langsung kirimkan file (.apk) target ke sini, Bro!**");
+    ctx.answerCbQuery().catch(() => {}); 
+    
+    Promise.all([
+        setUserSession(ctx.from.id, { feature: 'jiagu' }),
+        ctx.replyWithMarkdown("🛡️ **[MODE ENCRYPTION: PROTECTION 360 JIAGU]**\n\n👉 **Silakan langsung kirimkan file (.apk) target ke sini, Bro!**")
+    ]).catch((err) => console.error('[Error menu_jiagu Engine]:', err));
 });
 
-// ======================== HANDLER BUKTI PEMBAYARAN ========================
+// ======================== PROCESSOR PEMBAYARAN & BUKTI SCREENSHOT ========================
 
 bot.on('photo', async (ctx) => {
     const userId = ctx.from.id;
-    const session = await getUserSession(userId);
     
+    // Tarik session secara asinkronous cepat
+    const session = await getUserSession(userId);
     const currentFeature = session ? session.feature : 'premium_generic';
     const fileId = ctx.message.photo[ctx.message.photo.length - 1].file_id;
     const senderName = ctx.from.first_name || 'User';
@@ -174,6 +197,7 @@ bot.on('photo', async (ctx) => {
             parse_mode: 'Markdown'
         });
 
+        // Simpan data target ke local cache mapping untuk kecepatan respon admin
         adminReplies[adminNotification.message_id] = {
             targetUserId: userId,
             feature: currentFeature,
@@ -183,16 +207,17 @@ bot.on('photo', async (ctx) => {
 
         ctx.replyWithMarkdown('✅ **Bukti pembayaran telah berhasil dikirim ke Admin.**\nMohon tunggu sebentar, Admin akan segera memvalidasi transaksi Anda.');
     } catch (err) {
-        console.error(err);
+        console.error('[Fatal Photo Handler]:', err);
     }
 });
 
-// ======================== PROCESSOR APK & TEXT INPUT ========================
+// ======================== TEXT INPUT & ADMIN DISPATCHER ========================
 
 bot.on('text', async (ctx) => {
     const userId = ctx.from.id;
     const textMessage = ctx.message.text;
 
+    // PIPELINE INTERAKSI ADMIN SYSTEM
     if (String(userId) === String(ADMIN_ID) && ctx.message.reply_to_message) {
         const linkedSession = adminReplies[ctx.message.reply_to_message.message_id];
         
@@ -205,34 +230,39 @@ bot.on('text', async (ctx) => {
             if (linkedSession.feature === 'fix_app') responseDoneText = `🚀 **DONE! SOURCE CODE LOGIC REPAIRED SUCCESSFULLY**`;
             if (linkedSession.feature === 'jiagu') responseDoneText = `🚀 **DONE! PROTECTION 360 JIAGU INJECTED SUCCESSFULLY**`;
 
-            try {
-                await ctx.telegram.sendMessage(userTarget, responseDoneText, { parse_mode: 'Markdown' });
-                if (linkedSession.apkFileId) {
-                    await ctx.telegram.sendDocument(userTarget, linkedSession.apkFileId, {
-                        caption: `📥 **File:** \`${linkedSession.apkName}\``,
-                        parse_mode: 'Markdown'
-                    });
-                }
-                ctx.reply(`✅ **Sukses terkirim ke User (ID: ${userTarget}).**`);
+            // Kirim notifikasi sukses + Kirim File APK modifikasi secara async (paralel)
+            ctx.reply(`⏳ **Mengirimkan data enkripsi balik ke user (ID: ${userTarget})...**`);
+            
+            Promise.all([
+                ctx.telegram.sendMessage(userTarget, responseDoneText, { parse_mode: 'Markdown' }),
+                linkedSession.apkFileId ? ctx.telegram.sendDocument(userTarget, linkedSession.apkFileId, {
+                    caption: `📥 **File:** \`${linkedSession.apkName}\``,
+                    parse_mode: 'Markdown'
+                }) : Promise.resolve(),
+                deleteUserSession(userTarget) // Bersihkan database dari data sampah (Auto clean-up)
+            ]).then(() => {
+                ctx.reply(`✅ **Sukses terkirim sempurna & Session Cleaned.**`);
                 delete adminReplies[ctx.message.reply_to_message.message_id];
-                await deleteUserSession(userTarget);
-            } catch (error) {
-                ctx.reply(`❌ Terjadi error: ${error.message}`);
-            }
+            }).catch((error) => {
+                ctx.reply(`❌ Core Pipeline Error: ${error.message}`);
+            });
             return;
         }
     }
 
+    // PIPELINE DESKRIPSI ERROR USER (FIX ENGINE)
     const session = await getUserSession(userId);
     if (session && session.feature === 'fix_app' && session.step === 'waiting_text') {
         session.bugDescription = textMessage; 
         session.step = 'waiting_apk'; 
         
-        // WAJIB: Simpan ke database selesai dulu baru reply teks biar aman di serverless Vercel
+        // Pipa data aman ke DB, baru luncurkan balasan UI
         await setUserSession(userId, session);
         return ctx.replyWithMarkdown(`✅ **DESKRIPSI PARSING BERHASIL**\n\n👉 **Sekarang, silakan kirimkan file (.apk) yang ingin diperbaiki!**`);
     }
 });
+
+// ======================== BINARY DECOMPILER (DOCUMENT HANDLER) ========================
 
 bot.on('document', async (ctx) => {
     const userId = ctx.from.id;
@@ -246,6 +276,7 @@ bot.on('document', async (ctx) => {
     session.savedApkId = fileId;
     session.savedApkName = fileName;
 
+    // Cabang Khusus Fitur Fix Source Code Logic
     if (session.feature === 'fix_app') {
         session.startTime = Date.now(); 
         await setUserSession(userId, session);
@@ -258,6 +289,7 @@ bot.on('document', async (ctx) => {
         );
     }
 
+    // Cabang Modifikasi Instan (Unpack, Remove Ads, Jiagu)
     await setUserSession(userId, session);
     const steps = [
         { pct: 30, txt: 'Mengekstrak dan memetakan biner...' },
@@ -276,19 +308,32 @@ bot.on('document', async (ctx) => {
     await ctx.replyWithMarkdown(`✅ **PROSES SELESAI SEMPURNA!**`, Markup.inlineKeyboard([[Markup.button.callback('📥 Download Hasil Modifikasi', payCallback)]])).catch((err) => console.error(err));
 });
 
-// ======================== GERBANG PEMBAYARAN ========================
-const handlePaymentResponse = async (ctx, featureName, priceText) => {
-    await ctx.answerCbQuery().catch(() => {});
-    return ctx.replyWithMarkdown(`💳 **FORM LISENSI PREMIUM**\n\n🛠️ Fitur: **${featureName}**\n💰 Tagihan: **${priceText}**\n\n👉 Silakan transfer ke QRIS grup lalu kirim screenshot bukti ke sini.`, Markup.inlineKeyboard([[Markup.button.url('📱 Buka QRIS di Group', 'https://t.me/+7G-rozzl_Uk4NDll')]]));
+// ======================== ASYNC PAYMENT GATEWAY CALLBACKS ========================
+
+const handlePaymentResponse = (ctx, featureName, priceText) => {
+    ctx.answerCbQuery().catch(() => {}); // Instant Feedback Loop
+    return ctx.replyWithMarkdown(
+        `💳 **FORM LISENSI PREMIUM**\n\n` +
+        `🛠️ Fitur: **${featureName}**\n` +
+        `💰 Tagihan: **${priceText}**\n\n` +
+        `👉 Silakan transfer ke QRIS grup lalu kirim screenshot bukti ke sini.`, 
+        Markup.inlineKeyboard([[Markup.button.url('📱 Buka QRIS di Group', 'https://t.me/+7G-rozzl_Uk4NDll')]])
+    );
 };
 
-bot.action('pay_unpack', async (ctx) => { await handlePaymentResponse(ctx, '📦 UNPACK CORE RESOURCES', 'Rp 500.000,-'); });
-bot.action('pay_ads', async (ctx) => { await handlePaymentResponse(ctx, '🚫 STRIP & BYPASS AD-LAYERS', 'Rp 250.000,-'); });
-bot.action('pay_jiagu', async (ctx) => { await handlePaymentResponse(ctx, '🛡️ PROTECTION 360 JIAGU', 'Rp 350.000,-'); });
-bot.action('pay_fix', async (ctx) => { await handlePaymentResponse(ctx, '🛠️ SOURCE CODE LOGIC REPAIR', 'Rp 400.000,-'); });
+bot.action('pay_unpack', (ctx) => { handlePaymentResponse(ctx, '📦 UNPACK CORE RESOURCES', 'Rp 500.000,-'); });
+bot.action('pay_ads', (ctx) => { handlePaymentResponse(ctx, '🚫 STRIP & BYPASS AD-LAYERS', 'Rp 250.000,-'); });
+bot.action('pay_jiagu', (ctx) => { handlePaymentResponse(ctx, '🛡️ PROTECTION 360 JIAGU', 'Rp 350.000,-'); });
+bot.action('pay_fix', (ctx) => { handlePaymentResponse(ctx, '🛠️ SOURCE CODE LOGIC REPAIR', 'Rp 400.000,-'); });
+
+// ======================== WEBHOOK SETUP FOR SERVERLESS VERCEL ========================
 
 const app = express();
+app.use(express.json()); // Memastikan payload json ter-parsing sempurna di layer terluar
 app.use(bot.webhookCallback('/api/telegram'));
-bot.telegram.setWebhook(`https://bot-telegram-bahasa.vercel.app/api/telegram`).catch((err) => console.error(err));
+
+bot.telegram.setWebhook(`https://bot-telegram-bahasa.vercel.app/api/telegram`)
+   .then(() => console.log('[WEBHOOK ACTIVE] Server running flawlessly on high-speed routing.'))
+   .catch((err) => console.error('[WEBHOOK FAILING]:', err));
 
 module.exports = app;
