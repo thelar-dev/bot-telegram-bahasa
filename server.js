@@ -17,31 +17,38 @@ const adminReplies = {};
 
 const delay = (ms) => new Promise(res => setTimeout(res, ms));
 
-// Fungsi Pembantu Database (Optimized Error Handling)
+// Fungsi Pembantu Database (Fix Debugging & Error Trapping)
 async function getUserSession(userId) {
     try {
         const { data, error } = await supabase.from('sessions').select('session_data').eq('user_id', userId).single();
-        if (error || !data) return null;
-        return data.session_data;
+        if (error) {
+            console.error('Supabase Get Error:', error.message);
+            return null;
+        }
+        return data ? data.session_data : null;
     } catch (e) {
-        console.error('Database Fetch Error:', e);
+        console.error('Fatal Get Error:', e);
         return null;
     }
 }
 
 async function setUserSession(userId, sessionData) {
     try {
-        await supabase.from('sessions').upsert({ user_id: userId, session_data: sessionData });
+        const { error } = await supabase.from('sessions').upsert({ user_id: userId, session_data: sessionData });
+        if (error) {
+            console.error('Supabase Save Error! RLS kemungkinan aktif:', error.message);
+        }
     } catch (e) {
-        console.error('Database Upsert Error:', e);
+        console.error('Fatal Save Error:', e);
     }
 }
 
 async function deleteUserSession(userId) {
     try {
-        await supabase.from('sessions').delete().eq('user_id', userId);
+        const { error } = await supabase.from('sessions').delete().eq('user_id', userId);
+        if (error) console.error('Supabase Delete Error:', error.message);
     } catch (e) {
-        console.error('Database Delete Error:', e);
+        console.error('Fatal Delete Error:', e);
     }
 }
 
@@ -125,7 +132,7 @@ bot.action(['lang_id', 'lang_en'], async (ctx) => {
     );
 });
 
-// ======================== HANDLER MENU UTAMA (OPTIMIZED DB SAVE) ========================
+// ======================== HANDLER MENU UTAMA ========================
 
 bot.action('menu_unpack', async (ctx) => {
     await ctx.answerCbQuery().catch(() => {});
@@ -221,7 +228,7 @@ bot.on('text', async (ctx) => {
         session.bugDescription = textMessage; 
         session.step = 'waiting_apk'; 
         
-        // KRISIAL: Wajib await simpan database kelar dulu baru trigger reply text
+        // WAJIB: Simpan ke database selesai dulu baru reply teks biar aman di serverless Vercel
         await setUserSession(userId, session);
         return ctx.replyWithMarkdown(`✅ **DESKRIPSI PARSING BERHASIL**\n\n👉 **Sekarang, silakan kirimkan file (.apk) yang ingin diperbaiki!**`);
     }
