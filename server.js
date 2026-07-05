@@ -1,5 +1,5 @@
 /**
- * SYNTAXAPP ARTIFICIAL INTELLIGENCE MODDING CORE v5.0
+ * SYNTAXAPP ARTIFICIAL INTELLIGENCE MODDING CORE v5.1 - FULL FINAL
  * Engineered for Ultra-Fast Serverless Execution & Zero-Latency Operations
  * Main Developer / Owner: Kresna Thelar
  */
@@ -59,7 +59,7 @@ bot.start(async (ctx) => {
     // Teks AI Style Premium
     const startText = 
         `🛰️ **[ SYNTAXAPP AI CORE NODE INITIATED ]**\n` +
-        `\`═════════════════════════════════════\`\n\n` +
+        `\`══════════════════════════════════\`\n\n` +
         `👤 **USER PROFILE:** ${namaUser}\n` +
         `🆔 **USER ID:** \`${userId}\`\n\n` +
         `Selamat datang, **${namaUser}**. Saya adalah modul kecerdasan buatan yang dikembangkan untuk melakukan dekompilasi tingkat tinggi, restrukturisasi bytecode, dan optimasi arsitektur aplikasi secara otomatis.\n\n` +
@@ -95,6 +95,39 @@ bot.start(async (ctx) => {
     }
 });
 
+// Pilihan Bahasa -> Menu Utama (FIXED VARIABLE ERROR & DYNAMIC PERSONA)
+bot.action(['lang_id', 'lang_en'], async (ctx) => {
+    ctx.answerCbQuery().catch(() => {});
+    
+    // Inisialisasi data user agar tidak terjadi ReferenceError
+    const namaUser = ctx.from.first_name || 'User';
+    const userId = ctx.from.id;
+    const isIndo = ctx.callbackQuery.data === 'lang_id';
+
+    const welcomeText = isIndo
+        ? `🤖 **[ MAIN CONTROL PANEL LEVEL 5.0 ]**\n` +
+          `\`══════════════════════════════════\`\n` +
+          `🧬 **NODE OPERATOR:** \`SYNTAX-AI-${userId}\`\n` +
+          `Status Core Server: 🟢 \`ACTIVE (HEALTHY)\` \n\n` +
+          `Halo, **${namaUser}**. Modul Kecerdasan Buatan telah berhasil diinisialisasi secara sinkronous.\n\n` +
+          `👉 Silakan tentukan sub-modul teknologi di bawah ini untuk mengeksekusi manipulasi binari:`
+        : `🤖 **[ MAIN CONTROL PANEL LEVEL 5.0 ]**\n` +
+          `\`══════════════════════════════════\`\n` +
+          `🧬 **NODE OPERATOR:** \`SYNTAX-AI-${userId}\`\n` +
+          `Core Server Status: 🟢 \`ACTIVE (HEALTHY)\` \n\n` +
+          `Greetings, **${namaUser}**. Artificial Intelligence modules have been synchronized successfully.\n\n` +
+          `👉 Select one of the technological sub-modules below to execute binary manipulation:`;
+
+    ctx.replyWithMarkdown(
+        welcomeText,
+        Markup.inlineKeyboard([
+            [Markup.button.callback('📦 Unpack Core Resources', 'menu_unpack')],
+            [Markup.button.callback('🚫 Strip & Bypass Ad-Layers', 'menu_remove_ads')],
+            [Markup.button.callback('🛠️ Source Code Logic Repair', 'menu_fix_app')],
+            [Markup.button.callback('🛡️ Protection 360 Jiagu', 'menu_jiagu')]
+        ])
+    ).catch((err) => console.error('[AI CORE ERROR] Gagal mengirim menu utama:', err));
+});
 
 // Perintah /status
 bot.command('status', async (ctx) => {
@@ -143,30 +176,6 @@ bot.command('status', async (ctx) => {
         `Proses restrukturisasi logika mendalam memerlukan alokasi daya server awan selama **3-5 hari kerja** guna memastikan stabilitas penuh.\n` +
         `👉 Pantau perkembangan dengan mengetik /status secara berkala.`
     );
-});
-
-// Pilihan Bahasa -> Menu Utama
-bot.action(['lang_id', 'lang_en'], async (ctx) => {
-    ctx.answerCbQuery().catch(() => {});
-    const isIndo = ctx.callbackQuery.data === 'lang_id';
-
-    const welcomeText = isIndo
-        ? `🤖 **[ MAIN CONTROL PANEL LEVEL 4.0 ]**\n` +
-          `Status Core Server: 🟢 \`ACTIVE (HEALTHY)\` \n\n` +
-          `Halo, **${namaUser}**. Sistem AI siap mengeksekusi perintah. Pilih salah satu sub-modul teknologi di bawah ini untuk memulai modifikasi:`
-        : `🤖 **[ MAIN CONTROL PANEL LEVEL 4.0 ]**\n` +
-          `Core Server Status: 🟢 \`ACTIVE (HEALTHY)\` \n\n` +
-          `Hello. AI systems are ready. Select one of the technological sub-modules below to begin modifications:`;
-
-    ctx.replyWithMarkdown(
-        welcomeText,
-        Markup.inlineKeyboard([
-            [Markup.button.callback('📦 Unpack Core Resources', 'menu_unpack')],
-            [Markup.button.callback('🚫 Strip & Bypass Ad-Layers', 'menu_remove_ads')],
-            [Markup.button.callback('🛠️ Source Code Logic Repair', 'menu_fix_app')],
-            [Markup.button.callback('🛡️ Protection 360 Jiagu', 'menu_jiagu')]
-        ])
-    ).catch((err) => console.error(err));
 });
 
 // ======================== HIGH SPEED INTERACTION ENGINE ========================
@@ -219,7 +228,7 @@ bot.on('photo', async (ctx) => {
 
     try {
         const adminNotification = await ctx.telegram.sendPhoto(ADMIN_ID, fileId, {
-            caption: `🛰️ **[ TRANS-VALIDATION INBOUND ]**\n\`═════════════════════════════════════\`\n` +
+            caption: `🛰️ **[ TRANS-VALIDATION INBOUND ]**\n\`══════════════════════════════════\`\n` +
                      `👤 User: **${senderName}** (ID: \`${userId}\`)\n` +
                      `🧪 Paket Modul: *${currentFeature.toUpperCase()}*\n\n` +
                      `👉 *Balas pesan ini dengan mengetik kata "OK" untuk merilis hasil modifikasi.*`,
@@ -254,7 +263,7 @@ bot.on('text', async (ctx) => {
         
         if (linkedSession && textMessage.toLowerCase().startsWith('ok')) {
             const userTarget = linkedSession.targetUserId;
-            let responseDoneText = `🚀 **[ COMPILATION SUCCESSFUL ]**\n\`═════════════════════════════════════\`\n` +
+            let responseDoneText = `🚀 **[ COMPILATION SUCCESSFUL ]**\n\`══════════════════════════════════\`\n` +
                                    `Modul Kecerdasan Buatan telah berhasil menyusun ulang berkas target Anda secara sempurna.`;
 
             ctx.reply(`⚙️ *Mentransmisikan berkas terenkripsi balik ke user ID: ${userTarget}...*`);
@@ -315,7 +324,7 @@ bot.on('document', async (ctx) => {
         session.step = 'compiling';
         await setUserSession(userId, session);
         return ctx.replyWithMarkdown(
-            `📥 **[ SOURCE MATRIX ACCEPTED ]**\n\`═════════════════════════════════════\`\n` +
+            `📥 **[ SOURCE MATRIX ACCEPTED ]**\n\`══════════════════════════════════\`\n` +
             `📂 Berkas: \`${fileName}\`\n` +
             `🧬 Fitur: \`Source Code Logic Repair\`\n\n` +
             `⚡ **AI COMPILING NOTICE:**\n` +
@@ -352,7 +361,7 @@ bot.on('document', async (ctx) => {
 const handlePaymentResponse = (ctx, featureName, priceText) => {
     ctx.answerCbQuery().catch(() => {});
     return ctx.replyWithMarkdown(
-        `💳 **[ DIGITAL LICENSE GATEWAY ]**\n\`═════════════════════════════════════\`\n\n` +
+        `💳 **[ DIGITAL LICENSE GATEWAY ]**\n\`══════════════════════════════════\`\n\n` +
         `🛠️ Pilihan Modul: **${featureName}**\n` +
         `💰 Token Enkripsi: **${priceText}**\n\n` +
         `👉 Silakan lakukan pembayaran ke QRIS grup resmi. Setelah sukses, **kirimkan berkas gambar tangkapan layar (screenshot) bukti transfer langsung ke sini** agar AI mendeteksi otentikasinya.`, 
@@ -366,7 +375,7 @@ bot.action('pay_jiagu', (ctx) => { handlePaymentResponse(ctx, '🛡️ PROTECTIO
 bot.action('pay_fix', (ctx) => { handlePaymentResponse(ctx, '🛠️ SOURCE CODE LOGIC REPAIR', 'Rp 400.000,-'); });
 
 // Express Serverless Setup
-const app = express();
+const app = report = express();
 app.use(express.json());
 app.use(bot.webhookCallback('/api/telegram'));
 
