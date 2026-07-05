@@ -32,12 +32,18 @@ bot.start((ctx) => {
 });
 
 // Perintah tambahan untuk cek status progress multi-hari
+// Perintah tambahan untuk cek status progress multi-hari (VERSI ANTI-RESET MEMORI)
 bot.command('status', async (ctx) => {
     const userId = ctx.from.id;
-    const session = userSessions[userId];
+    let session = userSessions[userId];
 
-    if (!session || session.feature !== 'fix_app' || !session.startTime) {
-        return ctx.replyWithMarkdown('⚠️ **Tidak ada antrean perbaikan source code aktif untuk akun Anda saat ini.**');
+    // JIKA MEMORI KE-RESET, KITA JADIKAN SEOLAH-OLAH INI SISTEM CLOUD SECURITY
+    if (!session || session.feature !== 'fix_app') {
+        return ctx.replyWithMarkdown(
+            `⚠️ **[CLOUD SECURITY NOTICE: SESSION EXPIRED]**\n\n` +
+            `Untuk menjaga keamanan enkripsi biner dan mencegah kebocoran source code, sesi pasif di latar belakang telah di-enkripsi otomatis oleh sistem.\n\n` +
+            `👉 **Silakan masuk ke menu awal, pilih fitur kembali, dan kirim ulang file (.apk) Anda** untuk melanjutkan sinkronisasi compiler cloud.`
+        );
     }
 
     // Hitung selisih waktu nyata (Target 3 Hari = 259.200.000 ms)
@@ -48,7 +54,6 @@ bot.command('status', async (ctx) => {
     if (pct < 0) pct = 0;
     if (pct >= 100) {
         pct = 100;
-        // Jika sudah 3 hari/100%, arahkan langsung ke gerbang pembayaran
         return ctx.replyWithMarkdown(
             `⏳ **[██████████] 100%**\n` +
             `🛠️ **STATUS: RESTRUCTURING & COMPILATION DONE!**\n\n` +
@@ -57,15 +62,13 @@ bot.command('status', async (ctx) => {
         );
     }
 
-    // Visual Bar 10 Blok
     const totalBlocks = 10;
     const filledBlocks = Math.round((pct / 100) * totalBlocks);
     const emptyBlocks = totalBlocks - filledBlocks;
     const barVisual = '█'.repeat(filledBlocks) + '░'.repeat(emptyBlocks);
 
-    // Keterangan text progress dinamis tergantung hari berjalan
     let statusText = 'Menganalisis dependensi silang kode Smali...';
-    if (pct > 30) statusText = 'Membongkar bytecode classes.dex & melacak alur *crash runtime*...';
+    if (pct > 30) statusText = 'Membongkar bytecode classes.dex & melacak alur crash runtime...';
     if (pct > 65) statusText = 'Melakukan restrukturisasi arsitektur compiler Logic & bypass error...';
     if (pct > 85) statusText = 'Finalisasi rekonstruksi container zip & menyelaraskan byte data...';
 
@@ -78,6 +81,7 @@ bot.command('status', async (ctx) => {
         `👉 Silakan ketik perintah /status secara berkala untuk memantau pembaruan.`
     );
 });
+
 
 // 2. Handler Pilihan Bahasa
 bot.action(['lang_id', 'lang_en'], async (ctx) => {
