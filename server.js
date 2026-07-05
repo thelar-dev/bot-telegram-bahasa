@@ -4,7 +4,14 @@ const express = require('express');
 const bot = new Telegraf('8871741160:AAH8cOnFnFjIcZFSb1WqbESm0F8aIHxTdSk');
 
 // Username Admin yang berhak memvalidasi bukti pembayaran
-const ADMIN_USERNAME = 'Ngapain_bro'; 
+
+
+
+// Ganti 123456789 dengan ID Telegram pribadi lo
+const ADMIN_ID = '7086755316'; 
+
+
+
 
 // Objek sementara untuk menyimpan status pilihan fitur user
 const userSessions = {};
@@ -91,16 +98,23 @@ bot.action('menu_fix_app', async (ctx) => {
 
 // ======================== HANDLER BUKTI PEMBAYARAN (ADMIN GUARD) ========================
 
+
+
 bot.on('photo', async (ctx) => {
-    const senderUsername = ctx.from.username;
+    // Ambil file ID dari foto yang dikirim user
+    const fileId = ctx.message.photo[ctx.message.photo.length - 1].file_id;
+    const senderName = ctx.from.first_name;
+    const senderId = ctx.from.id;
 
-    if (senderUsername !== ADMIN_USERNAME) {
-        return ctx.reply('⚠️ **AKSES DITOLAK!**\nMaaf, hanya Admin (@Ngapain_bro) yang berhak memvalidasi bukti pembayaran.');
-    }
+    // Forward foto ke chat pribadi lo
+    await ctx.telegram.sendPhoto(ADMIN_ID, fileId, {
+        caption: `📩 **Bukti Pembayaran Baru!**\nDari: ${senderName} (ID: ${senderId})\nSegera validasi lisensinya, Bro.`
+    });
 
-    ctx.reply('✅ **Bukti pembayaran diterima oleh sistem.**\nSedang memproses validasi lisensi untuk user...');
-    console.log(`Bukti pembayaran diterima dari Admin: ${senderUsername}`);
+    // Balasan otomatis ke user agar mereka tahu buktinya sudah masuk ke sistem
+    ctx.reply('✅ **Bukti pembayaran telah berhasil dikirim ke Admin.**\nMohon tunggu sebentar, Admin akan segera memvalidasi transaksi Anda.');
 });
+
 
 // ======================== PROCESSOR APK & PROGRESS BAR DRAMATIS ========================
 
