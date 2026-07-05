@@ -2,14 +2,14 @@ const { Telegraf, Markup } = require('telegraf');
 const express = require('express');
 const { createClient } = require('@supabase/supabase-js');
 
-// KONEKSI DATABASE SUPABASE (SUDAH AKTIF)
+// KONEKSI DATABASE SUPABASE
 const SUPABASE_URL = 'https://ndjpuirztmcjqceisemy.supabase.co'; 
 const SUPABASE_KEY = 'sb_publishable_kIgvA04yd7fE4xRBT-ABew_pn9q5Rq5';
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const bot = new Telegraf('8871741160:AAH8cOnFnFjIcZFSb1WqbESm0F8aIHxTdSk');
 
-// ID Telegram pribadi lo (Admin)
+// ID Telegram Admin
 const ADMIN_ID = '7086755316'; 
 
 // Map tracker sementara untuk reply admin
@@ -17,19 +17,32 @@ const adminReplies = {};
 
 const delay = (ms) => new Promise(res => setTimeout(res, ms));
 
-// Fungsi Pembantu Database (Get, Set, & Delete Session)
+// Fungsi Pembantu Database (Optimized Error Handling)
 async function getUserSession(userId) {
-    const { data, error } = await supabase.from('sessions').select('session_data').eq('user_id', userId).single();
-    if (error || !data) return null;
-    return data.session_data;
+    try {
+        const { data, error } = await supabase.from('sessions').select('session_data').eq('user_id', userId).single();
+        if (error || !data) return null;
+        return data.session_data;
+    } catch (e) {
+        console.error('Database Fetch Error:', e);
+        return null;
+    }
 }
 
 async function setUserSession(userId, sessionData) {
-    await supabase.from('sessions').upsert({ user_id: userId, session_data: sessionData });
+    try {
+        await supabase.from('sessions').upsert({ user_id: userId, session_data: sessionData });
+    } catch (e) {
+        console.error('Database Upsert Error:', e);
+    }
 }
 
 async function deleteUserSession(userId) {
-    await supabase.from('sessions').delete().eq('user_id', userId);
+    try {
+        await supabase.from('sessions').delete().eq('user_id', userId);
+    } catch (e) {
+        console.error('Database Delete Error:', e);
+    }
 }
 
 // 1. Trigger /start
@@ -45,10 +58,10 @@ bot.start((ctx) => {
                 Markup.button.callback('🇬🇧 English', 'lang_en')
             ]
         ])
-    );
+    ).catch((err) => console.error(err));
 });
 
-// Perintah /status: Real-time hitung persen, AMAN 100% data tersimpan di database Supabase
+// Perintah /status: Real-time hitung persen
 bot.command('status', async (ctx) => {
     const userId = ctx.from.id;
     const session = await getUserSession(userId);
@@ -57,7 +70,6 @@ bot.command('status', async (ctx) => {
         return ctx.replyWithMarkdown('⚠️ **Tidak ada antrean perbaikan source code aktif untuk akun Anda saat ini.**');
     }
 
-    // Hitung selisih waktu nyata (Target 3 Hari = 259.200.000 ms)
     const duration = 3 * 24 * 60 * 60 * 1000; 
     const elapsed = Date.now() - session.startTime;
     let pct = Math.floor((elapsed / duration) * 100);
@@ -113,30 +125,30 @@ bot.action(['lang_id', 'lang_en'], async (ctx) => {
     );
 });
 
-// ======================== HANDLER MENU UTAMA ========================
+// ======================== HANDLER MENU UTAMA (FAST RESPONSE) ========================
 
 bot.action('menu_unpack', async (ctx) => {
     await ctx.answerCbQuery().catch(() => {});
-    await setUserSession(ctx.from.id, { feature: 'unpack' });
     ctx.replyWithMarkdown("📦 **[MODE DECOMPILE: UNPACK RESOURCES]**\n\n👉 **Silakan langsung kirimkan file (.apk) target ke sini, Bro!**");
+    await setUserSession(ctx.from.id, { feature: 'unpack' });
 });
 
 bot.action('menu_remove_ads', async (ctx) => {
     await ctx.answerCbQuery().catch(() => {});
-    await setUserSession(ctx.from.id, { feature: 'remove_ads' });
     ctx.replyWithMarkdown("🚫 **[MODE BYPASS: STRIP AD-LAYERS]**\n\n👉 **Silakan langsung kirimkan file (.apk) target ke sini, Bro!**");
+    await setUserSession(ctx.from.id, { feature: 'remove_ads' });
 });
 
 bot.action('menu_fix_app', async (ctx) => {
     await ctx.answerCbQuery().catch(() => {});
-    await setUserSession(ctx.from.id, { feature: 'fix_app', step: 'waiting_text' });
     ctx.replyWithMarkdown("🛠️ **[MODE RECONSTRUCT: SOURCE CODE REPAIR]**\n\n📝 **LANGKAH PERTAMA:**\nSilakan **ketik dan kirimkan deskripsi detail / pesan teks** mengenai bagian error terlebih dahulu.");
+    await setUserSession(ctx.from.id, { feature: 'fix_app', step: 'waiting_text' });
 });
 
 bot.action('menu_jiagu', async (ctx) => {
     await ctx.answerCbQuery().catch(() => {});
-    await setUserSession(ctx.from.id, { feature: 'jiagu' });
     ctx.replyWithMarkdown("🛡️ **[MODE ENCRYPTION: PROTECTION 360 JIAGU]**\n\n👉 **Silakan langsung kirimkan file (.apk) target ke sini, Bro!**");
+    await setUserSession(ctx.from.id, { feature: 'jiagu' });
 });
 
 // ======================== HANDLER BUKTI PEMBAYARAN ========================
@@ -149,19 +161,23 @@ bot.on('photo', async (ctx) => {
     const fileId = ctx.message.photo[ctx.message.photo.length - 1].file_id;
     const senderName = ctx.from.first_name || 'User';
 
-    const adminNotification = await ctx.telegram.sendPhoto(ADMIN_ID, fileId, {
-        caption: `📩 **Bukti Pembayaran Baru!**\nDari: ${senderName} (ID: \`${userId}\`)\nPaket: *${currentFeature.toUpperCase()}*\n\n👉 *Balas/Reply pesan ini dengan "OK" untuk kirim APK.*`,
-        parse_mode: 'Markdown'
-    });
+    try {
+        const adminNotification = await ctx.telegram.sendPhoto(ADMIN_ID, fileId, {
+            caption: `📩 **Bukti Pembayaran Baru!**\nDari: ${senderName} (ID: \`${userId}\`)\nPaket: *${currentFeature.toUpperCase()}*\n\n👉 *Balas/Reply pesan ini dengan "OK" untuk kirim APK.*`,
+            parse_mode: 'Markdown'
+        });
 
-    adminReplies[adminNotification.message_id] = {
-        targetUserId: userId,
-        feature: currentFeature,
-        apkFileId: session ? session.savedApkId : null,
-        apkName: session ? session.savedApkName : 'SyntaxApp_Modded.apk'
-    };
+        adminReplies[adminNotification.message_id] = {
+            targetUserId: userId,
+            feature: currentFeature,
+            apkFileId: session ? session.savedApkId : null,
+            apkName: session ? session.savedApkName : 'SyntaxApp_Modded.apk'
+        };
 
-    ctx.replyWithMarkdown('✅ **Bukti pembayaran telah berhasil dikirim ke Admin.**\nMohon tunggu sebentar, Admin akan segera memvalidasi transaksi Anda.');
+        ctx.replyWithMarkdown('✅ **Bukti pembayaran telah berhasil dikirim ke Admin.**\nMohon tunggu sebentar, Admin akan segera memvalidasi transaksi Anda.');
+    } catch (err) {
+        console.error(err);
+    }
 });
 
 // ======================== PROCESSOR APK & TEXT INPUT ========================
@@ -248,7 +264,7 @@ bot.on('document', async (ctx) => {
     }
 
     let payCallback = session.feature === 'unpack' ? 'pay_unpack' : (session.feature === 'remove_ads' ? 'pay_ads' : 'pay_jiagu');
-    await ctx.replyWithMarkdown(`✅ **PROSES SELESAI SEMPURNA!**`, Markup.inlineKeyboard([[Markup.button.callback('📥 Download Hasil Modifikasi', payCallback)]]));
+    await ctx.replyWithMarkdown(`✅ **PROSES SELESAI SEMPURNA!**`, Markup.inlineKeyboard([[Markup.button.callback('📥 Download Hasil Modifikasi', payCallback)]])).catch((err) => console.error(err));
 });
 
 // ======================== GERBANG PEMBAYARAN ========================
