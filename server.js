@@ -51,22 +51,50 @@ async function deleteUserSession(userId) {
 
 // ======================== INTERFASE UTAMA (AI PERSPECTIVE) ========================
 
-// Handler /start
-bot.start((ctx) => {
+// Handler /start (AI Persona & Photo Profile Extractor Edition)
+bot.start(async (ctx) => {
+    const userId = ctx.from.id;
     const namaUser = ctx.from.first_name || 'User';
-    ctx.replyWithMarkdown(
+    
+    // Teks AI Style Premium
+    const startText = 
         `🛰️ **[ SYNTAXAPP AI CORE NODE INITIATED ]**\n` +
-        `\`════════════════════════════════════════\`\n\n` +
+        `\`═════════════════════════════════════\`\n\n` +
+        `👤 **USER PROFILE:** ${namaUser}\n` +
+        `🆔 **USER ID:** \`${userId}\`\n\n` +
         `Selamat datang, **${namaUser}**. Saya adalah modul kecerdasan buatan yang dikembangkan untuk melakukan dekompilasi tingkat tinggi, restrukturisasi bytecode, dan optimasi arsitektur aplikasi secara otomatis.\n\n` +
-        `⚙️ *Silakan tentukan protokol bahasa untuk memuat Panel Kontrol:*`,
-        Markup.inlineKeyboard([
-            [
-                Markup.button.callback('🇮🇩 Bahasa Indonesia', 'lang_id'),
-                Markup.button.callback('🇬🇧 English Matrix', 'lang_en')
-            ]
-        ])
-    ).catch((err) => console.error(err));
+        `⚙️ *Silakan tentukan protokol bahasa untuk memuat Panel Kontrol:*`;
+
+    const inlineButtons = Markup.inlineKeyboard([
+        [
+            Markup.button.callback('🇮🇩 Bahasa Indonesia', 'lang_id'),
+            Markup.button.callback('🇬🇧 English Matrix', 'lang_en')
+        ]
+    ]);
+
+    try {
+        // Ambil array foto profil dari user
+        const userPhotos = await ctx.telegram.getUserProfilePhotos(userId);
+        
+        // Jika user punya foto profil, kirim fotonya dengan caption teks di atas
+        if (userPhotos && userPhotos.total_count > 0) {
+            const fileId = userPhotos.photos[0][0].file_id; // Ambil foto profil terbaru ukuran terkecil/sedang biar cepat
+            await ctx.replyWithPhoto(fileId, {
+                caption: startText,
+                parse_mode: 'Markdown',
+                ...inlineButtons
+            });
+        } else {
+            // Jika user ga pake foto profil, kirim teks biasa sebagai fallback aman
+            await ctx.replyWithMarkdown(startText, inlineButtons);
+        }
+    } catch (err) {
+        console.error('[AI CORE] Gagal menarik data profil user:', err);
+        // Jika ada error jaringan, tetap kirim pesan teks agar alur tidak putus
+        ctx.replyWithMarkdown(startText, inlineButtons).catch((e) => console.error(e));
+    }
 });
+
 
 // Perintah /status
 bot.command('status', async (ctx) => {
@@ -125,7 +153,7 @@ bot.action(['lang_id', 'lang_en'], async (ctx) => {
     const welcomeText = isIndo
         ? `🤖 **[ MAIN CONTROL PANEL LEVEL 4.0 ]**\n` +
           `Status Core Server: 🟢 \`ACTIVE (HEALTHY)\` \n\n` +
-          `Halo, Bro Kresna. Sistem AI siap mengeksekusi perintah. Pilih salah satu sub-modul teknologi di bawah ini untuk memulai modifikasi:`
+          `Halo, **${namaUser}**. Sistem AI siap mengeksekusi perintah. Pilih salah satu sub-modul teknologi di bawah ini untuk memulai modifikasi:`
         : `🤖 **[ MAIN CONTROL PANEL LEVEL 4.0 ]**\n` +
           `Core Server Status: 🟢 \`ACTIVE (HEALTHY)\` \n\n` +
           `Hello. AI systems are ready. Select one of the technological sub-modules below to begin modifications:`;
@@ -191,7 +219,7 @@ bot.on('photo', async (ctx) => {
 
     try {
         const adminNotification = await ctx.telegram.sendPhoto(ADMIN_ID, fileId, {
-            caption: `🛰️ **[ TRANS-VALIDATION INBOUND ]**\n\`════════════════════════════════════════\`\n` +
+            caption: `🛰️ **[ TRANS-VALIDATION INBOUND ]**\n\`═════════════════════════════════════\`\n` +
                      `👤 User: **${senderName}** (ID: \`${userId}\`)\n` +
                      `🧪 Paket Modul: *${currentFeature.toUpperCase()}*\n\n` +
                      `👉 *Balas pesan ini dengan mengetik kata "OK" untuk merilis hasil modifikasi.*`,
@@ -226,7 +254,7 @@ bot.on('text', async (ctx) => {
         
         if (linkedSession && textMessage.toLowerCase().startsWith('ok')) {
             const userTarget = linkedSession.targetUserId;
-            let responseDoneText = `🚀 **[ COMPILATION SUCCESSFUL ]**\n\`════════════════════════════════════════\`\n` +
+            let responseDoneText = `🚀 **[ COMPILATION SUCCESSFUL ]**\n\`═════════════════════════════════════\`\n` +
                                    `Modul Kecerdasan Buatan telah berhasil menyusun ulang berkas target Anda secara sempurna.`;
 
             ctx.reply(`⚙️ *Mentransmisikan berkas terenkripsi balik ke user ID: ${userTarget}...*`);
@@ -287,7 +315,7 @@ bot.on('document', async (ctx) => {
         session.step = 'compiling';
         await setUserSession(userId, session);
         return ctx.replyWithMarkdown(
-            `📥 **[ SOURCE MATRIX ACCEPTED ]**\n\`════════════════════════════════════════\`\n` +
+            `📥 **[ SOURCE MATRIX ACCEPTED ]**\n\`═════════════════════════════════════\`\n` +
             `📂 Berkas: \`${fileName}\`\n` +
             `🧬 Fitur: \`Source Code Logic Repair\`\n\n` +
             `⚡ **AI COMPILING NOTICE:**\n` +
@@ -324,7 +352,7 @@ bot.on('document', async (ctx) => {
 const handlePaymentResponse = (ctx, featureName, priceText) => {
     ctx.answerCbQuery().catch(() => {});
     return ctx.replyWithMarkdown(
-        `💳 **[ DIGITAL LICENSE GATEWAY ]**\n\`════════════════════════════════════════\`\n\n` +
+        `💳 **[ DIGITAL LICENSE GATEWAY ]**\n\`═════════════════════════════════════\`\n\n` +
         `🛠️ Pilihan Modul: **${featureName}**\n` +
         `💰 Token Enkripsi: **${priceText}**\n\n` +
         `👉 Silakan lakukan pembayaran ke QRIS grup resmi. Setelah sukses, **kirimkan berkas gambar tangkapan layar (screenshot) bukti transfer langsung ke sini** agar AI mendeteksi otentikasinya.`, 
