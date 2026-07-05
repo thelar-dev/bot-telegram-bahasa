@@ -3,14 +3,16 @@ const express = require('express');
 
 const bot = new Telegraf('8871741160:AAH8cOnFnFjIcZFSb1WqbESm0F8aIHxTdSk');
 
-// ID Telegram pribadi lo (diambil dari log sistem lo)
-const ADMIN_ID = 6383366558; 
+// ID Telegram pribadi lo sesuai kode yang lo kasih
+const ADMIN_ID = '7086755316'; 
 
-// Objek untuk menyimpan status fitur dan file APK user
+// Objek untuk menyimpan status fitur dan file APK milik user
 const userSessions = {};
-// Mapping untuk melacak chat reply dari admin ke user id target
+
+// Map tracker untuk menghubungkan reply pesan admin ke user tujuan
 const adminReplies = {};
 
+// Fungsi pembantu buat animasi progress bar (jeda waktu dinamis)
 const delay = (ms) => new Promise(res => setTimeout(res, ms));
 
 // 1. Trigger /start
@@ -90,94 +92,99 @@ bot.action('menu_fix_app', async (ctx) => {
     );
 });
 
-// ======================== HANDLER BUKTI PEMBAYARAN & REPLIES ========================
+// ======================== HANDLER BUKTI PEMBAYARAN (ADMIN GUARD) ========================
 
 bot.on('photo', async (ctx) => {
     const userId = ctx.from.id;
     const session = userSessions[userId];
     
-    // Proteksi jika user langsung kirim foto tanpa pilih paket/kirim apk
-    const featureSelected = session ? session.feature : 'Premium Activation';
+    // Identifikasi paket yang sedang diproses user
+    const currentFeature = session ? session.feature : 'premium_generic';
 
+    // Ambil file ID dari foto bukti transfer
     const fileId = ctx.message.photo[ctx.message.photo.length - 1].file_id;
     const senderName = ctx.from.first_name || 'User';
 
-    // Kirim notifikasi bukti ke chat pribadi lo secara silent/no-username leak
-    const adminMsg = await ctx.telegram.sendPhoto(ADMIN_ID, fileId, {
-        caption: `📩 **Bukti Pembayaran Baru!**\nDari: ${senderName} (ID: \`${userId}\`)\nPaket: *${featureSelected.toUpperCase()}*\n\n👉 *Balas pesan ini dengan mengetik "OK" untuk merilis file APK ke user.*`,
+    // Forward foto bukti pembayaran langsung ke akun pribadi lo secara rahasia
+    const adminNotification = await ctx.telegram.sendPhoto(ADMIN_ID, fileId, {
+        caption: `📩 **Bukti Pembayaran Baru!**\nDari: ${senderName} (ID: \`${userId}\`)\nPaket: *${currentFeature.toUpperCase()}*\n\n👉 *Balas/Reply pesan ini dengan mengetik "OK" untuk mengirim berkas modifikasi ke user secara otomatis.*`,
         parse_mode: 'Markdown'
     });
 
-    // Simpan relasi ID pesan admin dengan ID user untuk divalidasi saat lo balas "OK"
-    adminReplies[adminMsg.message_id] = {
+    // Simpan relasi log message ID lo dengan data session si user
+    adminReplies[adminNotification.message_id] = {
         targetUserId: userId,
-        feature: featureSelected,
+        feature: currentFeature,
         apkFileId: session ? session.savedApkId : null,
-        apkName: session ? session.savedApkName : 'Modded_Application.apk'
+        apkName: session ? session.savedApkName : 'SyntaxApp_Modded.apk'
     };
 
-    ctx.replyWithMarkdown('✅ **Bukti pembayaran telah diterima oleh sistem.**\nMohon tunggu sebentar, Admin sedang memverifikasi transaksi Anda.');
+    // Balasan otomatis ke user agar mereka tahu buktinya sudah masuk ke sistem lo
+    ctx.replyWithMarkdown('✅ **Bukti pembayaran telah berhasil dikirim ke Admin.**\nMohon tunggu sebentar, Admin akan segera memvalidasi transaksi Anda.');
 });
 
-// ======================== PROCESSOR APK, TEXT, & VALIDASI OK ADMIN ========================
+// ======================== PROCESSOR APK & PROGRESS BAR DRAMATIS ========================
 
 bot.on('text', async (ctx) => {
     const userId = ctx.from.id;
     const textMessage = ctx.message.text;
 
-    // --- LOGIKA JIKA LO (ADMIN) MEMBALAS CHAT DENGAN "OK" ---
-    if (userId === ADMIN_ID && ctx.message.reply_to_message) {
-        const replyInfo = adminReplies[ctx.message.reply_to_message.message_id];
+    // --- LOGIKA UTAMA: JIKA LO (ADMIN) MEMBALAS CHAT BUKTI DENGAN KATA "OK" ---
+    if (String(userId) === String(ADMIN_ID) && ctx.message.reply_to_message) {
+        const linkedSession = adminReplies[ctx.message.reply_to_message.message_id];
         
-        if (replyInfo && textMessage.toLowerCase().startsWith('ok')) {
-            const targetUser = replyInfo.targetUserId;
-            let successText = '';
+        // Cek jika yang lo reply adalah chat notifikasi valid dan isinya adalah "OK"
+        if (linkedSession && textMessage.toLowerCase().startsWith('ok')) {
+            const userTarget = linkedSession.targetUserId;
+            let responseDoneText = '';
 
-            // Menyesuaikan kata-kata penyelesaian berdasarkan jenis paket
-            if (replyInfo.feature === 'unpack') {
-                successText = `🚀 **DONE! CORE RESOURCES UNPACKED SUCCESSFULLY**\n\n` +
-                              `Halo Bro, lisensi enkripsi Anda telah diaktifkan! Seluruh komponen internal, structural file, dan manifest asset dari berkas biner Anda telah dibongkar sempurna tanpa ada corrupt data.\n\n` +
-                              `📦 **Paket:** \`Premium Unpack Resource\`\n` +
-                              `🔐 **Status Dokumen:** \`UNLOCKED & VERIFIED\``;
-            } else if (replyInfo.feature === 'remove_ads') {
-                successText = `🚀 **DONE! AD-LAYERS STRIPPED SUCCESSFULLY**\n\n` +
-                              `Halo Bro, enkripsi bypass selesai! Seluruh Google Ads SDK, tracker analitik, dan pop-up adware telah dibersihkan secara total. Aplikasi Anda kini 100% bebas iklan dan jauh lebih ringan.\n\n` +
-                              `🚫 **Paket:** \`Premium Ads Removal & Bypass\`\n` +
-                              `⚡ **Status Performa:** \`MAXIMUM SPEED\``;
-            } else if (replyInfo.feature === 'fix_app') {
-                successText = `🚀 **DONE! SOURCE CODE LOGIC REPAIRED SUCCESSFULLY**\n\n` +
-                              `Halo Bro, restrukturisasi Smali dan penambalan kode logika selesai! Crash internal berhasil di-bypass dan seluruh error kompilasi kode sumber telah diperbaiki ke kondisi optimal.\n\n` +
-                              `🛠️ **Paket:** \`Premium Source Code Logic Repair\`\n` +
-                              `🟢 **Status Kompilasi:** \`SUCCESS / NO ERRORS\``;
+            // Membuat variasi pesan "Done" yang mewah berdasar paket pilihan user
+            if (linkedSession.feature === 'unpack') {
+                responseDoneText = `🚀 **DONE! CORE RESOURCES UNPACKED SUCCESSFULLY**\n\n` +
+                                   `Halo Bro, transaksi Anda terverifikasi! Seluruh berkas internal, manifest, biner, dan aset dex dari aplikasi Anda telah sukses di-unpack mentah secara sempurna.\n\n` +
+                                   `📦 **Paket:** \`Premium Unpack Core\`\n` +
+                                   `🔐 **Status File:** \`UNLOCKED / READY\``;
+            } else if (linkedSession.feature === 'remove_ads') {
+                responseDoneText = `🚀 **DONE! AD-LAYERS STRIPPED SUCCESSFULLY**\n\n` +
+                                   `Halo Bro, bypass premium selesai! Google Ads SDK, Unity Ads, serta pelacak analitik adware telah dilumpuhkan total dari aplikasi Anda. Bersih, aman, dan tanpa iklan.\n\n` +
+                                   `🚫 **Paket:** \`Premium Strip Ad-Layers\`\n` +
+                                   `⚡ **Status Sistem:** \`ADS CLEANED TOTAL\``;
+            } else if (linkedSession.feature === 'fix_app') {
+                responseDoneText = `🚀 **DONE! SOURCE CODE LOGIC REPAIRED SUCCESSFULLY**\n\n` +
+                                   `Halo Bro, injeksi penambalan logic selesai! File Smali terstruktur kembali, crash internal berhasil dilewati, dan error kompilasi kode sumber telah berhasil diperbaiki.\n\n` +
+                                   `🛠️ **Paket:** \`Premium Logic Repair\`\n` +
+                                   `🟢 **Status Kompilasi:** \`0 ERRORS / FIXED\``;
             } else {
-                successText = `🚀 **DONE! PREMIUM ACTIVATION SUCCESSFUL**\n\n` +
-                              `Halo Bro, lisensi premium Anda telah berhasil diverifikasi dan diaktifkan secara instan oleh sistem.`;
+                responseDoneText = `🚀 **DONE! LISENSI PREMIUM TELE_BOT AKTIF**\n\n` +
+                                   `Halo Bro, pembayaran Anda telah divalidasi dan dikonfirmasi langsung oleh Admin.`;
             }
 
             try {
-                // Kirim notifikasi sukses beserta file APK milik user sebelumnya
-                await ctx.telegram.sendMessage(targetUser, successText, { parse_mode: 'Markdown' });
+                // 1. Kirim pesan sukses teks dulu ke user
+                await ctx.telegram.sendMessage(userTarget, responseDoneText, { parse_mode: 'Markdown' });
                 
-                if (replyInfo.apkFileId) {
-                    await ctx.telegram.sendDocument(targetUser, replyInfo.apkFileId, {
-                        caption: `📥 **File:** \`${replyInfo.apkName}\`\n⚡ _Silakan unduh berkas hasil modifikasi final Anda di atas._`,
+                // 2. Kirim berkas APK yang tadi disimpan user ke room chat user tersebut
+                if (linkedSession.apkFileId) {
+                    await ctx.telegram.sendDocument(userTarget, linkedSession.apkFileId, {
+                        caption: `📥 **File:** \`${linkedSession.apkName}\`\n⚡ _Silakan klik untuk mengunduh aplikasi modifikasi final Anda._`,
                         parse_mode: 'Markdown'
                     });
                 }
                 
-                ctx.reply(`✅ **Sukses! Berkas modifikasi dan notifikasi Done telah terkirim ke User (ID: ${targetUser}).**`);
+                // Beri laporan balik ke chat pribadi lo kalau proses automasi kirimnya sukses
+                ctx.reply(`✅ **Sukses! Notifikasi Done dan File APK telah dikirim ke User (ID: ${userTarget}).**`);
                 
-                // Hapus data session dan tracker agar memori bersih
+                // Bersihkan ingatan memori tracker biar enteng
                 delete adminReplies[ctx.message.reply_to_message.message_id];
-                delete userSessions[targetUser];
-            } catch (err) {
-                ctx.reply(`❌ Gagal mengirim file ke user: ${err.message}`);
+                delete userSessions[userTarget];
+            } catch (error) {
+                ctx.reply(`❌ Terjadi error saat bot mengirim balik file ke user: ${error.message}`);
             }
             return;
         }
     }
 
-    // --- LOGIKA PARSING BUG TEXT UNTUK USER BIASA ---
+    // --- LOGIKA TEXT INPUT UNTUK USER BIASA ---
     const session = userSessions[userId];
     if (session && session.feature === 'fix_app' && session.step === 'waiting_text') {
         session.bugDescription = textMessage; 
@@ -206,7 +213,7 @@ bot.on('document', async (ctx) => {
         return ctx.replyWithMarkdown('⚠️ **DESKRIPSI REQUIRED! Tolong ketik dulu penjelasan errornya baru kirim file APK, Bro!**');
     }
 
-    // Simpan ID Dokumen APK user ke dalam session agar bisa dikirim balik nanti oleh admin
+    // PENTING: Simpan file ID & nama APK ke session user (Jangan dihapus dulu!)
     session.savedApkId = fileId;
     session.savedApkName = fileName;
 
@@ -264,6 +271,7 @@ bot.on('document', async (ctx) => {
 
     await delay(800);
 
+    // KUNCI UTAMA: Di sini `delete userSessions[userId]` DIHAPUS agar file APK-nya tetap tersimpan di server bot.
     await ctx.replyWithMarkdown(
         `✅ **PROSES SELESAI SEMPURNA!**\n\n` +
         `File **${fileName}** telah sukses dimodifikasi secara menyeluruh oleh cloud system kami.\n\n` +
@@ -274,13 +282,12 @@ bot.on('document', async (ctx) => {
     ).catch((e) => console.error("Gagal kirim link unduhan:", e));
 });
 
-// ======================== HANDLERS PEMBAYARAN DINAMIS ========================
+// ======================== HANDLERS PEMBAYARAN DINAMIS (HARGA BEDA-BEDA) ========================
 
 const handlePaymentResponse = async (ctx, featureName, priceText) => {
     await ctx.answerCbQuery().catch(() => {});
     
     const LINK_GROUP_QRIS = 'https://t.me/+7G-rozzl_Uk4NDll'; 
-    const LINK_ADMIN = 'https://t.me/SyntaxApp_bot'; 
 
     return ctx.replyWithMarkdown(
         `💳 **FORM PEMBAYARAN LISENSI & AKTIVASI**\n\n` +
@@ -290,8 +297,8 @@ const handlePaymentResponse = async (ctx, featureName, priceText) => {
         `⚠️ _Untuk mendapatkan key akses enkripsi serta mengunduh berkas APK hasil modifikasi, silakan selesaikan administrasi melalui instruksi berikut:_\n\n` +
         `📥 **LANGKAH-LANGKAH AKTIVASI JALUR PREMIUM:**\n` +
         `1️⃣ Klik tombol **"📱 Buka QRIS di Group"** di bawah ini.\n` +
-        `2️⃣ Scan gambar **QRIS** yang tertera di dalam group/channel tujuan menggunakan aplikasi M-Banking atau E-Wallet andalan Anda.\n` +
-        `3️⃣ Setelah transfer sukses, **kirim bukti screenshot** langsung ke bot ini agar tervalidasi otomatis oleh Admin tanpa nampilin identitas luar.`,
+        `2️⃣ Scan gambar **QRIS** yang tertera di dalam group/channel tujuan menggunakan aplikasi M-Banking atau E-Wallet Anda.\n` +
+        `3️⃣ Setelah transfer sukses, **kirim bukti screenshot** langsung ke ruang obrolan bot ini agar diteruskan ke Admin.`,
         Markup.inlineKeyboard([
             [Markup.button.url('📱 ⏩ Buka QRIS di Group', LINK_GROUP_QRIS)]
         ])
