@@ -31,7 +31,7 @@ bot.start((ctx) => {
     );
 });
 
-// 2. Handler Pilihan Bahasa
+// 2. Handler Pilihan Bahasa (DITAMBAH MENU JIAGU 360)
 bot.action(['lang_id', 'lang_en'], async (ctx) => {
     await ctx.answerCbQuery().catch(() => {});
     const isIndo = ctx.callbackQuery.data === 'lang_id';
@@ -51,12 +51,13 @@ bot.action(['lang_id', 'lang_en'], async (ctx) => {
         Markup.inlineKeyboard([
             [Markup.button.callback('📦 Unpack Core Resources', 'menu_unpack')],
             [Markup.button.callback('🚫 Strip & Bypass Ad-Layers', 'menu_remove_ads')],
-            [Markup.button.callback('🛠️ Source Code Logic Repair', 'menu_fix_app')]
+            [Markup.button.callback('🛠️ Source Code Logic Repair', 'menu_fix_app')],
+            [Markup.button.callback('🛡️ Protection 360 Jiagu', 'menu_jiagu')] // <-- Fitur Baru
         ])
     ).catch((e) => console.error("Gagal kirim main menu:", e));
 });
 
-// ======================== HANDLER 3 MENU UTAMA ========================
+// ======================== HANDLER MENU UTAMA ========================
 
 bot.action('menu_unpack', async (ctx) => {
     await ctx.answerCbQuery().catch(() => {});
@@ -92,26 +93,32 @@ bot.action('menu_fix_app', async (ctx) => {
     );
 });
 
+bot.action('menu_jiagu', async (ctx) => { // <-- Handler Fitur Baru
+    await ctx.answerCbQuery().catch(() => {});
+    const userId = ctx.from.id;
+    userSessions[userId] = { feature: 'jiagu' }; 
+    ctx.replyWithMarkdown(
+        "🛡️ **[MODE ENCRYPTION: PROTECTION 360 JIAGU]**\n\n" +
+        "Sistem akan menyuntikkan shell pelindung tingkat lanjut (VMP), mengenkripsi file dex, mengamankan string internal, serta memproteksi aplikasi dari dekompilasi, manipulasi memori, dan modifikasi ilegal.\n\n" +
+        "👉 **Silakan langsung kirimkan file (.apk) target ke sini, Bro!**"
+    );
+});
+
 // ======================== HANDLER BUKTI PEMBAYARAN (ADMIN GUARD) ========================
 
 bot.on('photo', async (ctx) => {
     const userId = ctx.from.id;
     const session = userSessions[userId];
     
-    // Identifikasi paket yang sedang diproses user
     const currentFeature = session ? session.feature : 'premium_generic';
-
-    // Ambil file ID dari foto bukti transfer
     const fileId = ctx.message.photo[ctx.message.photo.length - 1].file_id;
     const senderName = ctx.from.first_name || 'User';
 
-    // Forward foto bukti pembayaran langsung ke akun pribadi lo secara rahasia
     const adminNotification = await ctx.telegram.sendPhoto(ADMIN_ID, fileId, {
         caption: `📩 **Bukti Pembayaran Baru!**\nDari: ${senderName} (ID: \`${userId}\`)\nPaket: *${currentFeature.toUpperCase()}*\n\n👉 *Balas/Reply pesan ini dengan mengetik "OK" untuk mengirim berkas modifikasi ke user secara otomatis.*`,
         parse_mode: 'Markdown'
     });
 
-    // Simpan relasi log message ID lo dengan data session si user
     adminReplies[adminNotification.message_id] = {
         targetUserId: userId,
         feature: currentFeature,
@@ -119,7 +126,6 @@ bot.on('photo', async (ctx) => {
         apkName: session ? session.savedApkName : 'SyntaxApp_Modded.apk'
     };
 
-    // Balasan otomatis ke user agar mereka tahu buktinya sudah masuk ke sistem lo
     ctx.replyWithMarkdown('✅ **Bukti pembayaran telah berhasil dikirim ke Admin.**\nMohon tunggu sebentar, Admin akan segera memvalidasi transaksi Anda.');
 });
 
@@ -129,16 +135,13 @@ bot.on('text', async (ctx) => {
     const userId = ctx.from.id;
     const textMessage = ctx.message.text;
 
-    // --- LOGIKA UTAMA: JIKA LO (ADMIN) MEMBALAS CHAT BUKTI DENGAN KATA "OK" ---
     if (String(userId) === String(ADMIN_ID) && ctx.message.reply_to_message) {
         const linkedSession = adminReplies[ctx.message.reply_to_message.message_id];
         
-        // Cek jika yang lo reply adalah chat notifikasi valid dan isinya adalah "OK"
         if (linkedSession && textMessage.toLowerCase().startsWith('ok')) {
             const userTarget = linkedSession.targetUserId;
             let responseDoneText = '';
 
-            // Membuat variasi pesan "Done" yang mewah berdasar paket pilihan user
             if (linkedSession.feature === 'unpack') {
                 responseDoneText = `🚀 **DONE! CORE RESOURCES UNPACKED SUCCESSFULLY**\n\n` +
                                    `Halo Bro, transaksi Anda terverifikasi! Seluruh berkas internal, manifest, biner, dan aset dex dari aplikasi Anda telah sukses di-unpack mentah secara sempurna.\n\n` +
@@ -154,16 +157,19 @@ bot.on('text', async (ctx) => {
                                    `Halo Bro, injeksi penambalan logic selesai! File Smali terstruktur kembali, crash internal berhasil dilewati, dan error kompilasi kode sumber telah berhasil diperbaiki.\n\n` +
                                    `🛠️ **Paket:** \`Premium Logic Repair\`\n` +
                                    `🟢 **Status Kompilasi:** \`0 ERRORS / FIXED\``;
+            } else if (linkedSession.feature === 'jiagu') { // <-- Respons Done Khusus Jiagu
+                responseDoneText = `🚀 **DONE! PROTECTION 360 JIAGU INJECTED SUCCESSFULLY**\n\n` +
+                                   `Halo Bro, verifikasi berhasil! Enkripsi tingkat tinggi Jiagu 360 telah sukses disuntikkan ke dalam core biner aplikasi Anda. File aman dari ancaman reverse engineering.\n\n` +
+                                   `🛡️ **Paket:** \`Protection 360 Jiagu\`\n` +
+                                   `🔐 **Status Keamanan:** \`VMP SECURED & ANTI-DECOMPILE\``;
             } else {
                 responseDoneText = `🚀 **DONE! LISENSI PREMIUM TELE_BOT AKTIF**\n\n` +
                                    `Halo Bro, pembayaran Anda telah divalidasi dan dikonfirmasi langsung oleh Admin.`;
             }
 
             try {
-                // 1. Kirim pesan sukses teks dulu ke user
                 await ctx.telegram.sendMessage(userTarget, responseDoneText, { parse_mode: 'Markdown' });
                 
-                // 2. Kirim berkas APK yang tadi disimpan user ke room chat user tersebut
                 if (linkedSession.apkFileId) {
                     await ctx.telegram.sendDocument(userTarget, linkedSession.apkFileId, {
                         caption: `📥 **File:** \`${linkedSession.apkName}\`\n⚡ _Silakan klik untuk mengunduh aplikasi modifikasi final Anda._`,
@@ -171,10 +177,8 @@ bot.on('text', async (ctx) => {
                     });
                 }
                 
-                // Beri laporan balik ke chat pribadi lo kalau proses automasi kirimnya sukses
                 ctx.reply(`✅ **Sukses! Notifikasi Done dan File APK telah dikirim ke User (ID: ${userTarget}).**`);
                 
-                // Bersihkan ingatan memori tracker biar enteng
                 delete adminReplies[ctx.message.reply_to_message.message_id];
                 delete userSessions[userTarget];
             } catch (error) {
@@ -184,7 +188,6 @@ bot.on('text', async (ctx) => {
         }
     }
 
-    // --- LOGIKA TEXT INPUT UNTUK USER BIASA ---
     const session = userSessions[userId];
     if (session && session.feature === 'fix_app' && session.step === 'waiting_text') {
         session.bugDescription = textMessage; 
@@ -213,23 +216,18 @@ bot.on('document', async (ctx) => {
         return ctx.replyWithMarkdown('⚠️ **DESKRIPSI REQUIRED! Tolong ketik dulu penjelasan errornya baru kirim file APK, Bro!**');
     }
 
-    // PENTING: Simpan file ID & nama APK ke session user (Jangan dihapus dulu!)
     session.savedApkId = fileId;
     session.savedApkName = fileName;
 
+    // Langkah progress bar disesuaikan jika memilih fitur Jiagu
     const steps = [
         { pct: 10, txt: 'Mengunduh data aplikasi ke sandbox cloud...' },
-        { pct: 16, txt: 'Memverifikasi arsitektur biner & file signature...' },
-        { pct: 20, txt: 'Mengekstrak manifes utama dan tabel resources...' },
-        { pct: 25, txt: 'Menginisialisasi modul injeksi SyntaxApp Engine...' },
-        { pct: 30, txt: 'Decompiling bytecode classes.dex menjadi struktur Smali...' },
-        { pct: 31, txt: 'Pemindaian silang dependensi internal API...' },
-        { pct: 34, txt: 'Menganalisis baris instruksi compiler...' },
-        { pct: 37, txt: 'Menjalankan skrip modifikasi dinamis pada core layer...' },
-        { pct: 52, txt: 'Pembersihan junk file dan sisa cache metadata...' },
-        { pct: 67, txt: 'Menyusun ulang bytecode (Rebuilding classes to dex container)...' },
-        { pct: 81, txt: 'Mengemas ulang seluruh folder aset menjadi APK biner...' },
-        { pct: 89, txt: 'Melakukan optimasi penjajaran byte lewat ZipAlign...' },
+        { pct: 20, txt: 'Memverifikasi arsitektur biner & file signature...' },
+        { pct: 30, txt: 'Mengekstrak dan memetakan struktur file dex...' },
+        { pct: 45, txt: session.feature === 'jiagu' ? 'Menginisialisasi modul Enkripsi Core Jiagu 360...' : 'Menginisialisasi modul injeksi SyntaxApp Engine...' },
+        { pct: 60, txt: session.feature === 'jiagu' ? 'Menyuntikkan shell pelindung VMP anti-decompile...' : 'Menjalankan skrip modifikasi dinamis pada core layer...' },
+        { pct: 75, txt: session.feature === 'jiagu' ? 'Mengenkripsi string data & merestrukturisasi classes.dex...' : 'Menyusun ulang bytecode container...' },
+        { pct: 90, txt: 'Melakukan optimalisasi penjajaran byte lewat ZipAlign...' },
         { pct: 95, txt: 'Menandatangani aplikasi dengan sertifikat enkripsi baru...' },
         { pct: 100, txt: 'Sukses total! Seluruh proses modifikasi selesai sempurna.' }
     ];
@@ -248,6 +246,7 @@ bot.on('document', async (ctx) => {
             if (session.feature === 'unpack') featureTitle = '📦 **CORE PROCESS: UNPACKING RESOURCES**';
             if (session.feature === 'remove_ads') featureTitle = '🚫 **CORE PROCESS: STRIPPING AD-LAYERS**';
             if (session.feature === 'fix_app') featureTitle = '🛠️ **CORE PROCESS: LOGIC REPAIRING**';
+            if (session.feature === 'jiagu') featureTitle = '🛡️ **CORE PROCESS: INJECTING 360 JIAGU SHIELD**';
 
             await delay(1300);
 
@@ -268,10 +267,10 @@ bot.on('document', async (ctx) => {
     let payCallback = 'pay_unpack';
     if (session.feature === 'remove_ads') payCallback = 'pay_ads';
     if (session.feature === 'fix_app') payCallback = 'pay_fix';
+    if (session.feature === 'jiagu') payCallback = 'pay_jiagu'; // <-- Callback Baru
 
     await delay(800);
 
-    // KUNCI UTAMA: Di sini `delete userSessions[userId]` DIHAPUS agar file APK-nya tetap tersimpan di server bot.
     await ctx.replyWithMarkdown(
         `✅ **PROSES SELESAI SEMPURNA!**\n\n` +
         `File **${fileName}** telah sukses dimodifikasi secara menyeluruh oleh cloud system kami.\n\n` +
@@ -282,7 +281,7 @@ bot.on('document', async (ctx) => {
     ).catch((e) => console.error("Gagal kirim link unduhan:", e));
 });
 
-// ======================== HANDLERS PEMBAYARAN DINAMIS (HARGA BEDA-BEDA) ========================
+// ======================== HANDLERS PEMBAYARAN DINAMIS ========================
 
 const handlePaymentResponse = async (ctx, featureName, priceText) => {
     await ctx.answerCbQuery().catch(() => {});
@@ -317,9 +316,13 @@ bot.action('pay_fix', async (ctx) => {
     await handlePaymentResponse(ctx, '🛠️ SOURCE CODE LOGIC REPAIR', 'Rp 400.000,-');
 });
 
+bot.action('pay_jiagu', async (ctx) => { // <-- Endpoint Pembayaran Jiagu Baru
+    await handlePaymentResponse(ctx, '🛡️ PROTECTION 360 JIAGU', 'Rp 350.000,-');
+});
+
 // ==========================================================================================
 
-const app = express();
+const app = report => express();
 const VERCEL_URL = 'https://bot-telegram-bahasa.vercel.app'; 
 
 app.use(bot.webhookCallback('/api/telegram'));
