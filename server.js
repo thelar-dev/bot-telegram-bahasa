@@ -125,30 +125,30 @@ bot.action(['lang_id', 'lang_en'], async (ctx) => {
     );
 });
 
-// ======================== HANDLER MENU UTAMA (FAST RESPONSE) ========================
+// ======================== HANDLER MENU UTAMA (OPTIMIZED DB SAVE) ========================
 
 bot.action('menu_unpack', async (ctx) => {
     await ctx.answerCbQuery().catch(() => {});
-    ctx.replyWithMarkdown("📦 **[MODE DECOMPILE: UNPACK RESOURCES]**\n\n👉 **Silakan langsung kirimkan file (.apk) target ke sini, Bro!**");
     await setUserSession(ctx.from.id, { feature: 'unpack' });
+    ctx.replyWithMarkdown("📦 **[MODE DECOMPILE: UNPACK RESOURCES]**\n\n👉 **Silakan langsung kirimkan file (.apk) target ke sini, Bro!**");
 });
 
 bot.action('menu_remove_ads', async (ctx) => {
     await ctx.answerCbQuery().catch(() => {});
-    ctx.replyWithMarkdown("🚫 **[MODE BYPASS: STRIP AD-LAYERS]**\n\n👉 **Silakan langsung kirimkan file (.apk) target ke sini, Bro!**");
     await setUserSession(ctx.from.id, { feature: 'remove_ads' });
+    ctx.replyWithMarkdown("🚫 **[MODE BYPASS: STRIP AD-LAYERS]**\n\n👉 **Silakan langsung kirimkan file (.apk) target ke sini, Bro!**");
 });
 
 bot.action('menu_fix_app', async (ctx) => {
     await ctx.answerCbQuery().catch(() => {});
-    ctx.replyWithMarkdown("🛠️ **[MODE RECONSTRUCT: SOURCE CODE REPAIR]**\n\n📝 **LANGKAH PERTAMA:**\nSilakan **ketik dan kirimkan deskripsi detail / pesan teks** mengenai bagian error terlebih dahulu.");
     await setUserSession(ctx.from.id, { feature: 'fix_app', step: 'waiting_text' });
+    ctx.replyWithMarkdown("🛠️ **[MODE RECONSTRUCT: SOURCE CODE REPAIR]**\n\n📝 **LANGKAH PERTAMA:**\nSilakan **ketik dan kirimkan deskripsi detail / pesan teks** mengenai bagian error terlebih dahulu.");
 });
 
 bot.action('menu_jiagu', async (ctx) => {
     await ctx.answerCbQuery().catch(() => {});
-    ctx.replyWithMarkdown("🛡️ **[MODE ENCRYPTION: PROTECTION 360 JIAGU]**\n\n👉 **Silakan langsung kirimkan file (.apk) target ke sini, Bro!**");
     await setUserSession(ctx.from.id, { feature: 'jiagu' });
+    ctx.replyWithMarkdown("🛡️ **[MODE ENCRYPTION: PROTECTION 360 JIAGU]**\n\n👉 **Silakan langsung kirimkan file (.apk) target ke sini, Bro!**");
 });
 
 // ======================== HANDLER BUKTI PEMBAYARAN ========================
@@ -220,6 +220,8 @@ bot.on('text', async (ctx) => {
     if (session && session.feature === 'fix_app' && session.step === 'waiting_text') {
         session.bugDescription = textMessage; 
         session.step = 'waiting_apk'; 
+        
+        // KRISIAL: Wajib await simpan database kelar dulu baru trigger reply text
         await setUserSession(userId, session);
         return ctx.replyWithMarkdown(`✅ **DESKRIPSI PARSING BERHASIL**\n\n👉 **Sekarang, silakan kirimkan file (.apk) yang ingin diperbaiki!**`);
     }
