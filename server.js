@@ -3,7 +3,7 @@ const express = require('express');
 
 const bot = new Telegraf('8871741160:AAH8cOnFnFjIcZFSb1WqbESm0F8aIHxTdSk');
 
-// ID Telegram pribadi lo sesuai kode yang lo kasih
+// ID Telegram pribadi lo
 const ADMIN_ID = '7086755316'; 
 
 // Objek untuk menyimpan status fitur dan file APK milik user
@@ -31,7 +31,7 @@ bot.start((ctx) => {
     );
 });
 
-// 2. Handler Pilihan Bahasa (DITAMBAH MENU JIAGU 360)
+// 2. Handler Pilihan Bahasa
 bot.action(['lang_id', 'lang_en'], async (ctx) => {
     await ctx.answerCbQuery().catch(() => {});
     const isIndo = ctx.callbackQuery.data === 'lang_id';
@@ -52,7 +52,7 @@ bot.action(['lang_id', 'lang_en'], async (ctx) => {
             [Markup.button.callback('📦 Unpack Core Resources', 'menu_unpack')],
             [Markup.button.callback('🚫 Strip & Bypass Ad-Layers', 'menu_remove_ads')],
             [Markup.button.callback('🛠️ Source Code Logic Repair', 'menu_fix_app')],
-            [Markup.button.callback('🛡️ Protection 360 Jiagu', 'menu_jiagu')] // <-- Fitur Baru
+            [Markup.button.callback('🛡️ Protection 360 Jiagu', 'menu_jiagu')]
         ])
     ).catch((e) => console.error("Gagal kirim main menu:", e));
 });
@@ -93,7 +93,7 @@ bot.action('menu_fix_app', async (ctx) => {
     );
 });
 
-bot.action('menu_jiagu', async (ctx) => { // <-- Handler Fitur Baru
+bot.action('menu_jiagu', async (ctx) => {
     await ctx.answerCbQuery().catch(() => {});
     const userId = ctx.from.id;
     userSessions[userId] = { feature: 'jiagu' }; 
@@ -135,6 +135,7 @@ bot.on('text', async (ctx) => {
     const userId = ctx.from.id;
     const textMessage = ctx.message.text;
 
+    // --- LOGIKA UTAMA: JIKA LO (ADMIN) MEMBALAS CHAT BUKTI DENGAN KATA "OK" ---
     if (String(userId) === String(ADMIN_ID) && ctx.message.reply_to_message) {
         const linkedSession = adminReplies[ctx.message.reply_to_message.message_id];
         
@@ -157,7 +158,7 @@ bot.on('text', async (ctx) => {
                                    `Halo Bro, injeksi penambalan logic selesai! File Smali terstruktur kembali, crash internal berhasil dilewati, dan error kompilasi kode sumber telah berhasil diperbaiki.\n\n` +
                                    `🛠️ **Paket:** \`Premium Logic Repair\`\n` +
                                    `🟢 **Status Kompilasi:** \`0 ERRORS / FIXED\``;
-            } else if (linkedSession.feature === 'jiagu') { // <-- Respons Done Khusus Jiagu
+            } else if (linkedSession.feature === 'jiagu') {
                 responseDoneText = `🚀 **DONE! PROTECTION 360 JIAGU INJECTED SUCCESSFULLY**\n\n` +
                                    `Halo Bro, verifikasi berhasil! Enkripsi tingkat tinggi Jiagu 360 telah sukses disuntikkan ke dalam core biner aplikasi Anda. File aman dari ancaman reverse engineering.\n\n` +
                                    `🛡️ **Paket:** \`Protection 360 Jiagu\`\n` +
@@ -188,6 +189,7 @@ bot.on('text', async (ctx) => {
         }
     }
 
+    // --- LOGIKA TEXT INPUT UNTUK USER BIASA ---
     const session = userSessions[userId];
     if (session && session.feature === 'fix_app' && session.step === 'waiting_text') {
         session.bugDescription = textMessage; 
@@ -219,7 +221,6 @@ bot.on('document', async (ctx) => {
     session.savedApkId = fileId;
     session.savedApkName = fileName;
 
-    // Langkah progress bar disesuaikan jika memilih fitur Jiagu
     const steps = [
         { pct: 10, txt: 'Mengunduh data aplikasi ke sandbox cloud...' },
         { pct: 20, txt: 'Memverifikasi arsitektur biner & file signature...' },
@@ -267,7 +268,7 @@ bot.on('document', async (ctx) => {
     let payCallback = 'pay_unpack';
     if (session.feature === 'remove_ads') payCallback = 'pay_ads';
     if (session.feature === 'fix_app') payCallback = 'pay_fix';
-    if (session.feature === 'jiagu') payCallback = 'pay_jiagu'; // <-- Callback Baru
+    if (session.feature === 'jiagu') payCallback = 'pay_jiagu';
 
     await delay(800);
 
@@ -316,13 +317,13 @@ bot.action('pay_fix', async (ctx) => {
     await handlePaymentResponse(ctx, '🛠️ SOURCE CODE LOGIC REPAIR', 'Rp 400.000,-');
 });
 
-bot.action('pay_jiagu', async (ctx) => { // <-- Endpoint Pembayaran Jiagu Baru
+bot.action('pay_jiagu', async (ctx) => {
     await handlePaymentResponse(ctx, '🛡️ PROTECTION 360 JIAGU', 'Rp 350.000,-');
 });
 
 // ==========================================================================================
 
-const app = report => express();
+const app = express();
 const VERCEL_URL = 'https://bot-telegram-bahasa.vercel.app'; 
 
 app.use(bot.webhookCallback('/api/telegram'));
