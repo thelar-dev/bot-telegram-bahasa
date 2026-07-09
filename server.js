@@ -1,5 +1,5 @@
 /**
- * SYNTAXAPP ARTIFICIAL INTELLIGENCE MODDING CORE v5.1 - FULL FINAL
+ * SYNTAXAPP ARTIFICIAL INTELLIGENCE MODDING CORE v5.2 - FINAL THREAT UPDATE
  * Engineered for Ultra-Fast Serverless Execution & Zero-Latency Operations
  * Main Developer / Owner: Kresna Thelar
  */
@@ -56,10 +56,9 @@ bot.start(async (ctx) => {
     const userId = ctx.from.id;
     const namaUser = ctx.from.first_name || 'User';
     
-    // Teks AI Style Premium
     const startText = 
         `🛰️ **[ SYNTAXAPP AI CORE NODE INITIATED ]**\n` +
-        `\`══════════════════════════════════\`\n\n` +
+        `\`═════════════════════════════════════\`\n\n` +
         `👤 **USER PROFILE:** ${namaUser}\n` +
         `🆔 **USER ID:** \`${userId}\`\n\n` +
         `Selamat datang, **${namaUser}**. Saya adalah modul kecerdasan buatan yang dikembangkan untuk melakukan dekompilasi tingkat tinggi, restrukturisasi bytecode, dan optimasi arsitektur aplikasi secara otomatis.\n\n` +
@@ -73,46 +72,40 @@ bot.start(async (ctx) => {
     ]);
 
     try {
-        // Ambil array foto profil dari user
         const userPhotos = await ctx.telegram.getUserProfilePhotos(userId);
-        
-        // Jika user punya foto profil, kirim fotonya dengan caption teks di atas
         if (userPhotos && userPhotos.total_count > 0) {
-            const fileId = userPhotos.photos[0][0].file_id; // Ambil foto profil terbaru ukuran terkecil/sedang biar cepat
+            const fileId = userPhotos.photos[0][0].file_id;
             await ctx.replyWithPhoto(fileId, {
                 caption: startText,
                 parse_mode: 'Markdown',
                 ...inlineButtons
             });
         } else {
-            // Jika user ga pake foto profil, kirim teks biasa sebagai fallback aman
             await ctx.replyWithMarkdown(startText, inlineButtons);
         }
     } catch (err) {
         console.error('[AI CORE] Gagal menarik data profil user:', err);
-        // Jika ada error jaringan, tetap kirim pesan teks agar alur tidak putus
         ctx.replyWithMarkdown(startText, inlineButtons).catch((e) => console.error(e));
     }
 });
 
-// Pilihan Bahasa -> Menu Utama (FIXED VARIABLE ERROR & DYNAMIC PERSONA)
+// Pilihan Bahasa -> Menu Utama
 bot.action(['lang_id', 'lang_en'], async (ctx) => {
     ctx.answerCbQuery().catch(() => {});
     
-    // Inisialisasi data user agar tidak terjadi ReferenceError
     const namaUser = ctx.from.first_name || 'User';
     const userId = ctx.from.id;
     const isIndo = ctx.callbackQuery.data === 'lang_id';
 
     const welcomeText = isIndo
         ? `🤖 **[ MAIN CONTROL PANEL LEVEL 5.0 ]**\n` +
-          `\`══════════════════════════════════\`\n` +
+          `\`═════════════════════════════════════\`\n` +
           `🧬 **NODE OPERATOR:** \`SYNTAX-AI-${userId}\`\n` +
           `Status Core Server: 🟢 \`ACTIVE (HEALTHY)\` \n\n` +
           `Halo, **${namaUser}**. Modul Kecerdasan Buatan telah berhasil diinisialisasi secara sinkronous.\n\n` +
           `👉 Silakan tentukan sub-modul teknologi di bawah ini untuk mengeksekusi manipulasi binari:`
         : `🤖 **[ MAIN CONTROL PANEL LEVEL 5.0 ]**\n` +
-          `\`══════════════════════════════════\`\n` +
+          `\`═════════════════════════════════════\`\n` +
           `🧬 **NODE OPERATOR:** \`SYNTAX-AI-${userId}\`\n` +
           `Core Server Status: 🟢 \`ACTIVE (HEALTHY)\` \n\n` +
           `Greetings, **${namaUser}**. Artificial Intelligence modules have been synchronized successfully.\n\n` +
@@ -228,7 +221,7 @@ bot.on('photo', async (ctx) => {
 
     try {
         const adminNotification = await ctx.telegram.sendPhoto(ADMIN_ID, fileId, {
-            caption: `🛰️ **[ TRANS-VALIDATION INBOUND ]**\n\`══════════════════════════════════\`\n` +
+            caption: `🛰️ **[ TRANS-VALIDATION INBOUND ]**\n\`═════════════════════════════════════\`\n` +
                      `👤 User: **${senderName}** (ID: \`${userId}\`)\n` +
                      `🧪 Paket Modul: *${currentFeature.toUpperCase()}*\n\n` +
                      `👉 *Balas pesan ini dengan mengetik kata "OK" untuk merilis hasil modifikasi.*`,
@@ -257,13 +250,12 @@ bot.on('text', async (ctx) => {
     const userId = ctx.from.id;
     const textMessage = ctx.message.text;
 
-    // PIPELINE INTERAKSI ADMIN SYSTEM
     if (String(userId) === String(ADMIN_ID) && ctx.message.reply_to_message) {
         const linkedSession = adminReplies[ctx.message.reply_to_message.message_id];
         
         if (linkedSession && textMessage.toLowerCase().startsWith('ok')) {
             const userTarget = linkedSession.targetUserId;
-            let responseDoneText = `🚀 **[ COMPILATION SUCCESSFUL ]**\n\`══════════════════════════════════\`\n` +
+            let responseDoneText = `🚀 **[ COMPILATION SUCCESSFUL ]**\n\`═════════════════════════════════════\`\n` +
                                    `Modul Kecerdasan Buatan telah berhasil menyusun ulang berkas target Anda secara sempurna.`;
 
             ctx.reply(`⚙️ *Mentransmisikan berkas terenkripsi balik ke user ID: ${userTarget}...*`);
@@ -274,7 +266,7 @@ bot.on('text', async (ctx) => {
                     caption: `📦 **Hasil Modifikasi:** \`${linkedSession.apkName}\``,
                     parse_mode: 'Markdown'
                 }) : Promise.resolve(),
-                deleteUserSession(userTarget) // Pembersihan otomatis memori sesi
+                deleteUserSession(userTarget)
             ]).then(() => {
                 ctx.reply(`✅ **Protokol selesai. Berkas dikirim dan sesi memori telah dibersihkan.**`);
                 delete adminReplies[ctx.message.reply_to_message.message_id];
@@ -285,11 +277,10 @@ bot.on('text', async (ctx) => {
         }
     }
 
-    // PIPELINE PENERIMA TEXT FIX APP USER (MEMPERBAIKI ERROR LOCKING FLOW)
     const session = await getUserSession(userId);
     if (session && session.feature === 'fix_app' && session.step === 'waiting_text') {
         session.bugDescription = textMessage; 
-        session.step = 'waiting_apk'; // Mengubah status langkah untuk menunggu dokumen APK
+        session.step = 'waiting_apk'; 
         
         await setUserSession(userId, session);
         return ctx.replyWithMarkdown(
@@ -318,13 +309,12 @@ bot.on('document', async (ctx) => {
     session.savedApkId = fileId;
     session.savedApkName = fileName;
 
-    // Logika Alur Khusus Fitur Source Code Repair
     if (session.feature === 'fix_app' && session.step === 'waiting_apk') {
         session.startTime = Date.now(); 
         session.step = 'compiling';
         await setUserSession(userId, session);
         return ctx.replyWithMarkdown(
-            `📥 **[ SOURCE MATRIX ACCEPTED ]**\n\`══════════════════════════════════\`\n` +
+            `📥 **[ SOURCE MATRIX ACCEPTED ]**\n\`═════════════════════════════════════\`\n` +
             `📂 Berkas: \`${fileName}\`\n` +
             `🧬 Fitur: \`Source Code Logic Repair\`\n\n` +
             `⚡ **AI COMPILING NOTICE:**\n` +
@@ -333,7 +323,6 @@ bot.on('document', async (ctx) => {
         );
     }
 
-    // Alur Proses Instan untuk Modul Lain (Unpack, Remove Ads, Jiagu)
     await setUserSession(userId, session);
     const steps = [
         { pct: 30, txt: 'Membongkar arsip zip dan memetakan biner dex...' },
@@ -356,15 +345,18 @@ bot.on('document', async (ctx) => {
     ).catch((err) => console.error(err));
 });
 
-// ======================== GERBANG PEMBAYARAN AUTOMATED SYSTEM ========================
+// ======================== GERBANG PEMBAYARAN VIA AUTOMATED ALERT GATEWAY ========================
 
 const handlePaymentResponse = (ctx, featureName, priceText) => {
     ctx.answerCbQuery().catch(() => {});
     return ctx.replyWithMarkdown(
-        `💳 **[ DIGITAL LICENSE GATEWAY ]**\n\`══════════════════════════════════\`\n\n` +
+        `💳 **[ DIGITAL LICENSE GATEWAY ]**\n` +
+        `\`═════════════════════════════════════\`\n\n` +
         `🛠️ Pilihan Modul: **${featureName}**\n` +
         `💰 Token Enkripsi: **${priceText}**\n\n` +
-        `👉 Silakan lakukan pembayaran ke QRIS grup resmi. Setelah sukses, **kirimkan berkas gambar tangkapan layar (screenshot) bukti transfer langsung ke sini** agar AI mendeteksi otentikasinya.`, 
+        `👉 Silakan lakukan pembayaran ke QRIS grup resmi. Setelah sukses, **kirimkan berkas gambar tangkapan layar (screenshot) bukti transfer langsung ke sini** agar AI mendeteksi otentikasinya.\n\n` +
+        `🚨 **[ CRITICAL ALERT - TERMINATION SECURITY PROTOCOL ]**\n` +
+        `*Sistem Keamanan Cloud mendeteksi aktivitas penangguhan berkas binari. Sesi enkripsi ini hanya berlaku selama 24 JAM. Jika bukti lisensi tidak diunggah dalam batas waktu, seluruh cache build, payload modifikasi, dan struktur kode target akan DIHANCURKAN TOTAL secara permanen dari server awan demi mencegah kebocoran data!*`, 
         Markup.inlineKeyboard([[Markup.button.url('📱 Buka Gateway QRIS di Group', 'https://t.me/+7G-rozzl_Uk4NDll')]])
     );
 };
@@ -375,7 +367,7 @@ bot.action('pay_jiagu', (ctx) => { handlePaymentResponse(ctx, '🛡️ PROTECTIO
 bot.action('pay_fix', (ctx) => { handlePaymentResponse(ctx, '🛠️ SOURCE CODE LOGIC REPAIR', 'Rp 500.000,-'); });
 
 // Express Serverless Setup
-const app = report = express();
+const app = express();
 app.use(express.json());
 app.use(bot.webhookCallback('/api/telegram'));
 
