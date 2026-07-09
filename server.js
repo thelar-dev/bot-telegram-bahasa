@@ -372,7 +372,7 @@ const handlePaymentResponse = (ctx, featureName, priceText) => {
 bot.action('pay_unpack', (ctx) => { handlePaymentResponse(ctx, '📦 UNPACK CORE RESOURCES', 'Rp 500.000,-'); });
 bot.action('pay_ads', (ctx) => { handlePaymentResponse(ctx, '🚫 STRIP & BYPASS AD-LAYERS', 'Rp 250.000,-'); });
 bot.action('pay_jiagu', (ctx) => { handlePaymentResponse(ctx, '🛡️ PROTECTION 360 JIAGU', 'Rp 350.000,-'); });
-bot.action('pay_fix', (ctx) => { handlePaymentResponse(ctx, '🛠️ SOURCE CODE LOGIC REPAIR', 'Rp 400.000,-'); });
+bot.action('pay_fix', (ctx) => { handlePaymentResponse(ctx, '🛠️ SOURCE CODE LOGIC REPAIR', 'Rp 500.000,-'); });
 
 // Express Serverless Setup
 const app = report = express();
